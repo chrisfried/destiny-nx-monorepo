@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "projects": {
+    "party": {
+      "projectType": "application",
+      "root": "apps/party",
+      "sourceRoot": "apps/party/src",
+      "prefix": "chrisfried-destiny-projects",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "outputs": ["{options.outputPath}"],
+          "options": {
+            "outputPath": "dist/apps/party",
+            "index": "apps/party/src/index.html",
+            "main": "apps/party/src/main.ts",
+            "polyfills": "apps/party/src/polyfills.ts",
+            "tsConfig": "apps/party/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": ["apps/party/src/favicon.ico", "apps/party/src/assets"],
+            "styles": ["apps/party/src/styles.scss"],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "apps/party/src/environments/environment.ts",
+                  "with": "apps/party/src/environments/environment.prod.ts"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "browserTarget": "party:build:production"
+            },
+            "development": {
+              "browserTarget": "party:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "party:build"
+          }
+        },
+        "lint": {
+          "builder": "@nrwl/linter:eslint",
+          "options": {
+            "lintFilePatterns": [
+              "apps/party/src/**/*.ts",
+              "apps/party/src/**/*.html"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "outputs": ["coverage/apps/party"],
+          "options": {
+            "jestConfig": "apps/party/jest.config.js",
+            "passWithNoTests": true
+          }
+        }
+      },
+      "tags": []
+    },
+    "party-e2e": {
+      "root": "apps/party-e2e",
+      "sourceRoot": "apps/party-e2e/src",
+      "projectType": "application",
+      "architect": {
+        "e2e": {
+          "builder": "@nrwl/cypress:cypress",
+          "options": {
+            "cypressConfig": "apps/party-e2e/cypress.json",
+            "devServerTarget": "party:serve:development"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "party:serve:production"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@nrwl/linter:eslint",
+          "outputs": ["{options.outputFile}"],
+          "options": {
+            "lintFilePatterns": ["apps/party-e2e/**/*.{js,ts}"]
+          }
+        }
+      },
+      "tags": [],
+      "implicitDependencies": ["party"]
+    }
+  }
+}
