@@ -1,0 +1,28 @@
+<mat-form-field color="accent">
+  <mat-label>Player {{ index + 1 }}</mat-label>
+  <input matInput [(ngModel)]="player.name" />
+</mat-form-field>
+<button
+  type="button"
+  mat-raised-button
+  color="accent"
+  (click)="fileInput.click()"
+>
+  Import DIM Weapon CSV
+</button>
+<input
+  hidden
+  (change)="changeListener($event)"
+  #fileInput
+  type="file"
+  id="file"
+/>
+{{ fileName }}
+<button
+  (click)="removePlayer()"
+  mat-icon-button
+  color="warn"
+  aria-label="Remove Player"
+>
+  <mat-icon>delete</mat-icon></button
+><br />

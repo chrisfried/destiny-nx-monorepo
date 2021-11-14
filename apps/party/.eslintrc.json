@@ -13,7 +13,7 @@
           "error",
           {
             "type": "attribute",
-            "prefix": "chrisfriedDestinyProjects",
+            "prefix": "destiny",
             "style": "camelCase"
           }
         ],
@@ -21,7 +21,7 @@
           "error",
           {
             "type": "element",
-            "prefix": "chrisfried-destiny-projects",
+            "prefix": "destiny",
             "style": "kebab-case"
           }
         ]
