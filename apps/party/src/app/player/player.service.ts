@@ -220,13 +220,12 @@ export class PlayerService {
               .map((w) => `perk:"${w.Archetype}" is:${this.dimType(w.Type)} is:heavy`)
           );
           player.lastImport = new Date();
-          console.log(player);
 
           this.updateCombinedSets()
         },
         (error: NgxCSVParserError) => {
           this.updateCombinedSets()
-          console.log('Error', error);
+          console.error('Error', error);
         }
       );
   }
@@ -356,7 +355,6 @@ export class PlayerService {
       this.combinedSets.intersection.powerSlot.archetypeSet = new Set([...this.combinedSets.intersection.powerSlot.archetypeSet].filter(x => player.powerSlot.archetypeSet.has(x as string)))
     })
 
-    console.log(this.combinedSets)
   }
 }
 
