@@ -25,7 +25,6 @@ export class AppComponent {
   }
 
   randomize() {
-    console.log(this.randomizationType, this.exotics, this.intersection)
     const slots: Array<'kineticSlot' | 'energySlot' | 'powerSlot'> = ['kineticSlot', 'energySlot', 'powerSlot']
     slots.sort(() => Math.random() - 0.5)
     let exoticAvailable = this.exotics
@@ -34,7 +33,7 @@ export class AppComponent {
       if (this.randomizationType === 'typeSet') {
         const source = exoticAvailable ? new Set([...this.intersection[slot][this.randomizationType], ...this.intersection[slot].exoticTypeSet]) : this.intersection[slot][this.randomizationType]
         const index = Math.floor(Math.random() * source.size)
-        items.push(`(${Array.from(source)[index]})`)
+        items.push(`(${Array.from(source)[index]}${exoticAvailable ? '' : ' -is:exotic'})`)
       } else {
         let source = this.intersection[slot][this.randomizationType]
         let index = Math.floor(Math.random() * source.size + (exoticAvailable ? 1 : 0))
@@ -46,6 +45,7 @@ export class AppComponent {
         items.push(`(${Array.from(source)[index]})`)
       }
     })
-    this.clipboard.copy(items.join(' or '))
+    this.searchText = items.join(' or ')
+    this.clipboard.copy(this.searchText)
   }
 }
