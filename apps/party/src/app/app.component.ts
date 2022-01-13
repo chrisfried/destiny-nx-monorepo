@@ -13,7 +13,7 @@ export class AppComponent {
   exotics = false;
   intersection;
   searchText = '';
-  minPower = 0;
+  minPower = 1100;
 
   constructor(
     private playerService: PlayerService,
@@ -21,6 +21,7 @@ export class AppComponent {
   ) {
     this.players = this.playerService.players;
     this.intersection = this.playerService.combinedSets.intersection;
+    this.playerService.minPower.subscribe((value) => (this.minPower = value));
   }
 
   changeMinPower(value: any) {
@@ -71,7 +72,7 @@ export class AppComponent {
         items.push(`(${Array.from(source)[index]})`);
       }
     });
-    this.searchText = items.join(' or ');
+    this.searchText = `(${items.join(' or ')}) power:>=${this.minPower}`;
     this.clipboard.copy(this.searchText);
   }
 }

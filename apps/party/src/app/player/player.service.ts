@@ -67,7 +67,7 @@ export class PlayerService {
     ]),
     new Set(['569799273', '569799275', '569799274']),
   ];
-  minPower = new BehaviorSubject(0);
+  minPower = new BehaviorSubject(1100);
 
   constructor(private ngxCsvParser: NgxCsvParser) {
     this.addPlayer();
