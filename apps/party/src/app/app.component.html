@@ -13,6 +13,13 @@
   >
     <mat-icon>add</mat-icon>
   </button>
+  <br />
+  <br />
+
+  <mat-form-field color="accent">
+    <mat-label>Minimum Power</mat-label>
+    <input matInput value="1100" (input)="changeMinPower($event)" />
+  </mat-form-field>
 
   <div>
     Commonalities
@@ -87,7 +94,7 @@
       <strong>Important:</strong> All players must have DIM set to the same
       language for this to work. Here's a handy screenshot showing the location
       of the export button in DIM:
-      <img src="../assets/dim-export.png" />
+      <img src="./assets/dim-export.png" />
     </li>
     <li>
       Collect the destinyWeapons.csv files your players just exported. Ask them
@@ -96,11 +103,11 @@
     </li>
     <li>
       Import a CSV file for each player at the top of this page. You can add a
-      player name keep track of which file is which, but it's not necessary to
-      do so for the randomizer to work its magic.
+      player name to keep track of which file is which, but it's not necessary
+      to do so for the randomizer to work its magic.
     </li>
     <li>
-      Choose your randomization type.
+      Choose your randomization type:
       <ul>
         <li>
           <strong>Weapons</strong> will choose a random weapon that all players
@@ -126,14 +133,14 @@
       group chat of choice.
     </li>
     <li>
-      Have all players copy-paste the string you just sent into the DIM search
+      Have all players copy-paste the string you just sent into their DIM search
       bar.
     </li>
     <li>
       At this point, you <em>can</em> let your players choose from the search
       results, but my preference is to request they use the "Randomize from
       Search" button, pictured here:
-      <img src="../assets/randomize-from-search.png" />
+      <img src="./assets/randomize-from-search.png" />
     </li>
   </ol>
 </div>
