@@ -14,10 +14,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { ClipboardModule } from '@angular/cdk/clipboard';
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
   declarations: [AppComponent, PlayerComponent],
-  imports: [BrowserModule,
+  imports: [
+    BrowserModule,
     AgGridModule.withComponents([]),
     BrowserAnimationsModule,
     NgxCsvParserModule,
@@ -27,9 +29,10 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
     MatInputModule,
     MatIconModule,
     FormsModule,
-    ClipboardModule
+    ClipboardModule,
+    HttpClientModule,
   ],
   providers: [],
   bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}

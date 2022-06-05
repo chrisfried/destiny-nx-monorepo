@@ -67,7 +67,7 @@ export class PlayerService {
     ]),
     new Set(['569799273', '569799275', '569799274']),
   ];
-  minPower = new BehaviorSubject(1100);
+  minPower = new BehaviorSubject(0);
 
   constructor(private ngxCsvParser: NgxCsvParser) {
     this.addPlayer();
@@ -423,7 +423,7 @@ export class PlayerService {
         );
         this.combinedSets.intersection.kineticSlot.exoticTypeSet = new Set(
           [...this.combinedSets.intersection.kineticSlot.exoticTypeSet].filter(
-            (x) => player.kineticSlot.exoticSet.has(x as string)
+            (x) => player.kineticSlot.exoticTypeSet.has(x as string)
           )
         );
         this.combinedSets.intersection.kineticSlot.weaponSet = new Set(
@@ -448,7 +448,7 @@ export class PlayerService {
         );
         this.combinedSets.intersection.energySlot.exoticTypeSet = new Set(
           [...this.combinedSets.intersection.energySlot.exoticTypeSet].filter(
-            (x) => player.energySlot.exoticSet.has(x as string)
+            (x) => player.energySlot.exoticTypeSet.has(x as string)
           )
         );
         this.combinedSets.intersection.energySlot.weaponSet = new Set(
@@ -473,7 +473,7 @@ export class PlayerService {
         );
         this.combinedSets.intersection.powerSlot.exoticTypeSet = new Set(
           [...this.combinedSets.intersection.powerSlot.exoticTypeSet].filter(
-            (x) => player.powerSlot.exoticSet.has(x as string)
+            (x) => player.powerSlot.exoticTypeSet.has(x as string)
           )
         );
         this.combinedSets.intersection.powerSlot.weaponSet = new Set(

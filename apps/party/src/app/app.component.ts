@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { PlayerService } from './player/player.service';
 import { Clipboard } from '@angular/cdk/clipboard';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'destiny-root',
@@ -10,14 +11,16 @@ import { Clipboard } from '@angular/cdk/clipboard';
 export class AppComponent {
   players;
   randomizationType: 'weaponSet' | 'archetypeSet' | 'typeSet' = 'weaponSet';
-  exotics = false;
+  exotics: 'exclude' | 'include' | 'required' = 'include';
   intersection;
   searchText = '';
-  minPower = 1100;
+  minPower = 0;
+  discordWebhookUrl = '';
 
   constructor(
     private playerService: PlayerService,
-    private clipboard: Clipboard
+    private clipboard: Clipboard,
+    private http: HttpClient
   ) {
     this.players = this.playerService.players;
     this.intersection = this.playerService.combinedSets.intersection;
@@ -47,32 +50,61 @@ export class AppComponent {
     const items: string[] = [];
     slots.forEach((slot) => {
       if (this.randomizationType === 'typeSet') {
-        const source = exoticAvailable
-          ? new Set([
-              ...this.intersection[slot][this.randomizationType],
-              ...this.intersection[slot].exoticTypeSet,
-            ])
-          : this.intersection[slot][this.randomizationType];
-        const index = Math.floor(Math.random() * source.size);
-        items.push(
-          `(${Array.from(source)[index]}${
-            exoticAvailable ? '' : ' -is:exotic'
-          })`
-        );
-      } else {
-        let source = this.intersection[slot][this.randomizationType];
-        let index = Math.floor(
-          Math.random() * source.size + (exoticAvailable ? 1 : 0)
-        );
-        if (index === source.size) {
-          exoticAvailable = false;
-          source = this.intersection[slot].exoticSet;
-          index = Math.floor(Math.random() * source.size);
+        if (exoticAvailable === 'required') {
+          const source = this.intersection[slot].exoticTypeSet;
+          console.log(this.intersection[slot]);
+          const index = Math.floor(Math.random() * source.size);
+          items.push(`(${Array.from(source)[index]} is:exotic)`);
+          exoticAvailable = 'exclude';
+        } else if (exoticAvailable === 'include') {
+          const source = new Set([
+            ...this.intersection[slot][this.randomizationType],
+            ...this.intersection[slot].exoticTypeSet,
+          ]);
+          const index = Math.floor(Math.random() * source.size);
+          items.push(`(${Array.from(source)[index]})`);
+        } else {
+          const source = this.intersection[slot][this.randomizationType];
+          const index = Math.floor(Math.random() * source.size);
+          items.push(`(${Array.from(source)[index]} -is:exotic)`);
         }
-        items.push(`(${Array.from(source)[index]})`);
+      } else {
+        if (exoticAvailable === 'required') {
+          const source = this.intersection[slot].exoticSet;
+          const index = Math.floor(Math.random() * source.size);
+          items.push(`(${Array.from(source)[index]})`);
+          exoticAvailable = 'exclude';
+        } else if (exoticAvailable === 'include') {
+          const nonExoticSize =
+            this.intersection[slot][this.randomizationType].size;
+          const source = new Set([
+            ...this.intersection[slot][this.randomizationType],
+            ...this.intersection[slot].exoticSet,
+          ]);
+          const index = Math.floor(
+            Math.random() * source.size + (exoticAvailable ? 1 : 0)
+          );
+          items.push(`(${Array.from(source)[index]})`);
+          if (index > nonExoticSize) {
+            exoticAvailable = 'exclude';
+          }
+        } else {
+          const source = this.intersection[slot][this.randomizationType];
+          const index = Math.floor(Math.random() * source.size);
+          items.push(`(${Array.from(source)[index]})`);
+        }
       }
     });
-    this.searchText = `(${items.join(' or ')}) power:>=${this.minPower}`;
+    this.searchText = `(${items.join(' or ')})${
+      this.minPower ? ` power:>=${this.minPower}` : ``
+    }`;
     this.clipboard.copy(this.searchText);
+    if (this.discordWebhookUrl) {
+      this.http
+        .post(this.discordWebhookUrl, {
+          content: `\`\`\`${this.searchText}\`\`\``,
+        })
+        .subscribe();
+    }
   }
 }
