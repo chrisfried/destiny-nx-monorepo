@@ -11,6 +11,23 @@
   </div>
 
   <div class="section">
+    <mat-card>
+      <mat-card-title>SRL²</mat-card-title>
+      <div class="code-block">
+        <code>{{
+          searchText || 'Add players, select options, then click the button'
+        }}</code>
+      </div>
+
+      <mat-card-actions>
+        <button color="primary" (click)="randomize()" mat-raised-button>
+          Randomize & Copy to Clipboard
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <div class="section">
     <h2>Players</h2>
     <div class="player-cards">
       <destiny-player
@@ -22,7 +39,61 @@
   </div>
 
   <div class="section">
-    <h2>Commonality Pool</h2>
+    <h2>Options</h2>
+
+    <div class="option-cards">
+      <mat-card>
+        <mat-card-title>Minimum Power</mat-card-title>
+        <mat-card-subtitle
+          >Limit pool for Power Level enabled activities</mat-card-subtitle
+        >
+        <mat-form-field color="accent">
+          <mat-label>Minimum Power</mat-label>
+          <input matInput (input)="changeMinPower($event)" />
+        </mat-form-field>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-title>Exotics</mat-card-title>
+        <mat-radio-group aria-label="Exotics" [(ngModel)]="exotics">
+          <mat-radio-button value="exclude">No Exotic</mat-radio-button>
+          <mat-radio-button value="include" [checked]="true"
+            >Possible Exotic</mat-radio-button
+          >
+          <mat-radio-button value="required">Require Exotic</mat-radio-button>
+        </mat-radio-group>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-title>Randomize</mat-card-title>
+        <mat-radio-group
+          aria-label="Randomization"
+          [(ngModel)]="randomizationType"
+        >
+          <mat-radio-button value="weaponSet" [checked]="true"
+            >Weapons</mat-radio-button
+          >
+          <mat-radio-button value="archetypeSet">Archetypes</mat-radio-button>
+          <mat-radio-button value="typeSet">Types</mat-radio-button>
+        </mat-radio-group>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-title>Discord Integration</mat-card-title>
+        <mat-card-subtitle
+          >Automatically send search text to a Discord
+          channel</mat-card-subtitle
+        >
+        <mat-form-field color="accent">
+          <mat-label>Discord Webhook URL</mat-label>
+          <input matInput [(ngModel)]="discordWebhookUrl" type="password" />
+        </mat-form-field>
+      </mat-card>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Pool Stats</h2>
     <div class="commonality-cards">
       <mat-card>
         <mat-card-title>Kinetic Slot</mat-card-title>
@@ -148,78 +219,6 @@
         </mat-chip-list>
       </mat-card>
     </div>
-  </div>
-
-  <div class="section">
-    <h2>Options</h2>
-
-    <div class="option-cards">
-      <mat-card>
-        <mat-card-title>Minimum Power</mat-card-title>
-        <mat-card-subtitle
-          >Limit pool for Power Level enabled activities</mat-card-subtitle
-        >
-        <mat-form-field color="accent">
-          <mat-label>Minimum Power</mat-label>
-          <input matInput (input)="changeMinPower($event)" />
-        </mat-form-field>
-      </mat-card>
-
-      <mat-card>
-        <mat-card-title>Exotics</mat-card-title>
-        <mat-radio-group aria-label="Exotics" [(ngModel)]="exotics">
-          <mat-radio-button value="exclude">No Exotic</mat-radio-button>
-          <mat-radio-button value="include" [checked]="true"
-            >Possible Exotic</mat-radio-button
-          >
-          <mat-radio-button value="required">Require Exotic</mat-radio-button>
-        </mat-radio-group>
-      </mat-card>
-
-      <mat-card>
-        <mat-card-title>Randomize</mat-card-title>
-        <mat-radio-group
-          aria-label="Randomization"
-          [(ngModel)]="randomizationType"
-        >
-          <mat-radio-button value="weaponSet" [checked]="true"
-            >Weapons</mat-radio-button
-          >
-          <mat-radio-button value="archetypeSet">Archetypes</mat-radio-button>
-          <mat-radio-button value="typeSet">Types</mat-radio-button>
-        </mat-radio-group>
-      </mat-card>
-
-      <mat-card>
-        <mat-card-title>Discord Integration</mat-card-title>
-        <mat-card-subtitle
-          >Automatically send search text to a Discord
-          channel</mat-card-subtitle
-        >
-        <mat-form-field color="accent">
-          <mat-label>Discord Webhook URL</mat-label>
-          <input matInput [(ngModel)]="discordWebhookUrl" type="password" />
-        </mat-form-field>
-      </mat-card>
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>SRL²</h2>
-    <mat-card>
-      <mat-card-title>Randomize</mat-card-title>
-      <div class="code-block">
-        <code>{{
-          searchText || 'Add players, select options, then click the button'
-        }}</code>
-      </div>
-
-      <mat-card-actions>
-        <button color="primary" (click)="randomize()" mat-raised-button>
-          Randomize & Copy to Clipboard
-        </button>
-      </mat-card-actions>
-    </mat-card>
   </div>
 
   <div class="section">
