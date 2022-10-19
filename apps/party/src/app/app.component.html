@@ -24,42 +24,108 @@
   <div>
     Commonalities
     <ul>
-      <li>
-        {{ intersection.kineticSlot.exoticSet.size }} Unique Kinetic Exotics
-      </li>
-      <li>
-        {{ intersection.kineticSlot.weaponSet.size }} Unique Kinetic Non-Exotic
-        Weapons
-      </li>
-      <li>
-        {{ intersection.kineticSlot.archetypeSet.size }} Kinetic Weapon
-        Archetypes
-      </li>
-      <li>{{ intersection.kineticSlot.typeSet.size }} Kinetic Weapon Types</li>
-    </ul>
-    <ul>
-      <li>
-        {{ intersection.energySlot.exoticSet.size }} Unique Energy Exotics
-      </li>
-      <li>
-        {{ intersection.energySlot.weaponSet.size }} Unique Energy Non-Exotic
-        Weapons
-      </li>
-      <li>
-        {{ intersection.energySlot.archetypeSet.size }} Energy Weapon Archetypes
-      </li>
-      <li>{{ intersection.energySlot.typeSet.size }} Energy Weapon Types</li>
-    </ul>
-    <ul>
-      <li>{{ intersection.powerSlot.exoticSet.size }} Unique Power Exotics</li>
-      <li>
-        {{ intersection.powerSlot.weaponSet.size }} Unique Power Non-Exotic
-        Weapons
-      </li>
-      <li>
-        {{ intersection.powerSlot.archetypeSet.size }} Power Weapon Archetypes
-      </li>
-      <li>{{ intersection.powerSlot.typeSet.size }} Power Weapon Types</li>
+      <li>Kinetic Slot</li>
+      <ul>
+        <li>
+          {{
+            intersection.kineticSlot.exoticSet.size +
+              intersection.kineticSlot.weaponSet.size
+          }}
+          Weapons
+        </li>
+        <ul>
+          <li>{{ intersection.kineticSlot.exoticSet.size }} Exotic</li>
+          <li>{{ intersection.kineticSlot.weaponSet.size }} Non-Exotic</li>
+        </ul>
+        <li>
+          {{ intersection.kineticSlot.archetypeSet.size }}
+          Archetypes
+        </li>
+        <li>{{ intersection.kineticSlot.typeSet.size }} Types</li>
+      </ul>
+      <li>Energy Slot</li>
+      <ul>
+        <li>
+          {{
+            intersection.energySlot.exoticSet.size +
+              intersection.energySlot.weaponSet.size
+          }}
+          Weapons
+        </li>
+        <ul>
+          <li>{{ intersection.energySlot.exoticSet.size }} Exotic</li>
+          <li>{{ intersection.energySlot.weaponSet.size }} Non-Exotic</li>
+        </ul>
+        <li>
+          {{ intersection.energySlot.archetypeSet.size }}
+          Archetypes
+        </li>
+        <li>{{ intersection.energySlot.typeSet.size }} Types</li>
+      </ul>
+      <li>Power Slot</li>
+      <ul>
+        <li>
+          {{
+            intersection.powerSlot.exoticSet.size +
+              intersection.powerSlot.weaponSet.size
+          }}
+          Weapons
+        </li>
+        <ul>
+          <li>{{ intersection.powerSlot.exoticSet.size }} Exotic</li>
+          <li>{{ intersection.powerSlot.weaponSet.size }} Non-Exotic</li>
+        </ul>
+        <li>{{ intersection.powerSlot.archetypeSet.size }} Archetypes</li>
+        <li>{{ intersection.powerSlot.typeSet.size }} Types</li>
+      </ul>
+      <li>Total</li>
+      <ul>
+        <li>
+          {{
+            intersection.kineticSlot.exoticSet.size +
+              intersection.kineticSlot.weaponSet.size +
+              intersection.energySlot.exoticSet.size +
+              intersection.energySlot.weaponSet.size +
+              intersection.powerSlot.exoticSet.size +
+              intersection.powerSlot.weaponSet.size
+          }}
+          Weapons
+        </li>
+        <ul>
+          <li>
+            {{
+              intersection.kineticSlot.exoticSet.size +
+                intersection.energySlot.exoticSet.size +
+                intersection.powerSlot.exoticSet.size
+            }}
+            Exotic
+          </li>
+          <li>
+            {{
+              intersection.kineticSlot.weaponSet.size +
+                intersection.energySlot.weaponSet.size +
+                intersection.powerSlot.weaponSet.size
+            }}
+            Non-Exotic
+          </li>
+        </ul>
+        <li>
+          {{
+            intersection.kineticSlot.archetypeSet.size +
+              intersection.energySlot.archetypeSet.size +
+              intersection.powerSlot.archetypeSet.size
+          }}
+          Archetypes
+        </li>
+        <li>
+          {{
+            intersection.kineticSlot.typeSet.size +
+              intersection.energySlot.typeSet.size +
+              intersection.powerSlot.typeSet.size
+          }}
+          Types
+        </li>
+      </ul>
     </ul>
   </div>
 
