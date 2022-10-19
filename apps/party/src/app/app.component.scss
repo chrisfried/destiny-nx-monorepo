@@ -2,11 +2,11 @@
   max-width: 750px;
   margin: 0 auto;
   padding: 1em;
+  gap: 2em;
+  display: flex;
+  flex-direction: column;
 }
 
-.title-block {
-  margin-bottom: 2em;
-}
 .title {
   font-size: 2em;
   line-height: 0.9em;
@@ -27,9 +27,6 @@ img {
 ol li {
   padding: 1em 0;
 }
-h3 {
-  margin-top: 5em;
-}
 .mat-radio-button {
   padding: 0.5em 1em;
 }
@@ -38,4 +35,58 @@ h3 {
 }
 .mat-button-base {
   margin: 0.5em 1em;
+}
+
+.commonality-cards,
+.player-cards,
+.option-cards {
+  display: flex;
+  gap: 0.5em;
+  flex-wrap: wrap;
+
+  .mat-card,
+  destiny-player {
+    flex: 1;
+
+    .mat-card-title {
+      white-space: nowrap;
+    }
+  }
+  .mat-chip {
+    white-space: nowrap;
+
+    &.weapons {
+      background: rgb(80, 118, 163);
+      background: linear-gradient(
+        135deg,
+        rgba(80, 118, 163, 1) 0%,
+        rgba(78, 50, 99, 1) 50%,
+        rgba(205, 173, 50, 1) 100%
+      );
+    }
+    &.exotics {
+      background: rgba(205, 173, 50, 1);
+    }
+    &.non-exotics {
+      background: rgb(80, 118, 163);
+      background: linear-gradient(
+        135deg,
+        rgba(80, 118, 163, 1) 0%,
+        rgba(78, 50, 99, 1) 100%
+      );
+    }
+    &.archetypes {
+      background: #585b59;
+    }
+    &.types {
+      background: #4a4b4a;
+    }
+  }
+}
+
+.code-block {
+  background-color: #2f3136;
+  border: solid 1px #202225;
+  padding: 0.5em;
+  border-radius: 0.25em;
 }

@@ -56,17 +56,17 @@ export class PlayerService {
       },
     },
   };
-  classWeaponSets = [
-    new Set([
-      '1180270694',
-      '2782325302',
-      '1180270692',
-      '2782325300',
-      '1180270693',
-      '2782325301',
-    ]),
-    new Set(['569799273', '569799275', '569799274']),
-  ];
+  classWeaponSet = new Set([
+    '1180270694',
+    '2782325302',
+    '1180270692',
+    '2782325300',
+    '1180270693',
+    '2782325301',
+    '569799273',
+    '569799275',
+    '569799274',
+  ]);
   minPower = new BehaviorSubject(0);
 
   constructor(private ngxCsvParser: NgxCsvParser) {
@@ -103,6 +103,9 @@ export class PlayerService {
   removePlayer(index: number) {
     this.players.splice(index, 1);
     this.updateCombinedSets();
+    if (this.players.length < 1) {
+      this.addPlayer();
+    }
   }
 
   importWeapons(playerIndex: number, file: File) {
@@ -164,7 +167,7 @@ export class PlayerService {
               .filter(
                 (w) => w.Tier === 'Exotic' && w.Category === 'KineticSlot'
               )
-              .map((w) => `name:"${w.Name}" hash:${w.Hash}`)
+              .map((w) => `name:"${w.Name}"`)
           );
           player.kineticSlot.exoticTypeSet = new Set(
             player.weapons
@@ -176,17 +179,13 @@ export class PlayerService {
           player.kineticSlot.weaponSet = new Set(
             player.weapons
               .filter(
-                (w) => w.Tier !== 'Exotic' && w.Category === 'KineticSlot'
+                (w) =>
+                  w.Tier !== 'Exotic' &&
+                  w.Category === 'KineticSlot' &&
+                  !this.classWeaponSet.has(w.Hash)
               )
               .map((w) => {
-                let res = `name:"${w.Name}"`;
-                this.classWeaponSets.forEach((set) => {
-                  if (set.has(w.Hash)) {
-                    const hashes = [...set].map((hash) => `hash:${hash}`);
-                    res = `name:"${w.Name}" (${hashes.join(' or ')})`;
-                  }
-                });
-                return res;
+                return `name:"${w.Name}"`;
               })
           );
           player.kineticSlot.typeSet = new Set(
@@ -211,7 +210,7 @@ export class PlayerService {
           player.energySlot.exoticSet = new Set(
             player.weapons
               .filter((w) => w.Tier === 'Exotic' && w.Category === 'Energy')
-              .map((w) => `name:"${w.Name}" hash:${w.Hash}`)
+              .map((w) => `name:"${w.Name}"`)
           );
           player.energySlot.exoticTypeSet = new Set(
             player.weapons
@@ -220,16 +219,14 @@ export class PlayerService {
           );
           player.energySlot.weaponSet = new Set(
             player.weapons
-              .filter((w) => w.Tier !== 'Exotic' && w.Category === 'Energy')
+              .filter(
+                (w) =>
+                  w.Tier !== 'Exotic' &&
+                  w.Category === 'Energy' &&
+                  !this.classWeaponSet.has(w.Hash)
+              )
               .map((w) => {
-                let res = `name:"${w.Name}"`;
-                this.classWeaponSets.forEach((set) => {
-                  if (set.has(w.Hash)) {
-                    const hashes = [...set].map((hash) => `hash:${hash}`);
-                    res = `name:"${w.Name}" (${hashes.join(' or ')})`;
-                  }
-                });
-                return res;
+                return `name:"${w.Name}"`;
               })
           );
           player.energySlot.typeSet = new Set(
@@ -248,7 +245,7 @@ export class PlayerService {
           player.powerSlot.exoticSet = new Set(
             player.weapons
               .filter((w) => w.Tier === 'Exotic' && w.Category === 'Power')
-              .map((w) => `name:"${w.Name}" hash:${w.Hash}`)
+              .map((w) => `name:"${w.Name}"`)
           );
           player.powerSlot.exoticTypeSet = new Set(
             player.weapons
@@ -257,16 +254,14 @@ export class PlayerService {
           );
           player.powerSlot.weaponSet = new Set(
             player.weapons
-              .filter((w) => w.Tier !== 'Exotic' && w.Category === 'Power')
+              .filter(
+                (w) =>
+                  w.Tier !== 'Exotic' &&
+                  w.Category === 'Power' &&
+                  !this.classWeaponSet.has(w.Hash)
+              )
               .map((w) => {
-                let res = `name:"${w.Name}"`;
-                this.classWeaponSets.forEach((set) => {
-                  if (set.has(w.Hash)) {
-                    const hashes = [...set].map((hash) => `hash:${hash}`);
-                    res = `name:"${w.Name}" or ${hashes.join(' or ')}`;
-                  }
-                });
-                return res;
+                return `name:"${w.Name}"`;
               })
           );
           player.powerSlot.typeSet = new Set(
@@ -285,6 +280,10 @@ export class PlayerService {
           player.lastImport = new Date();
 
           this.updateCombinedSets();
+        }
+
+        if (!this.players.find((p) => !p.lastImport)) {
+          this.addPlayer();
         }
       },
       (error: NgxCSVParserError) => {

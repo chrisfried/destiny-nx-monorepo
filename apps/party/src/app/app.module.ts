@@ -12,6 +12,8 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
 import { FormsModule } from '@angular/forms';
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { HttpClientModule } from '@angular/common/http';
@@ -28,6 +30,8 @@ import { HttpClientModule } from '@angular/common/http';
     MatCheckboxModule,
     MatInputModule,
     MatIconModule,
+    MatCardModule,
+    MatChipsModule,
     FormsModule,
     ClipboardModule,
     HttpClientModule,

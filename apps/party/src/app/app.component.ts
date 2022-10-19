@@ -52,7 +52,6 @@ export class AppComponent {
       if (this.randomizationType === 'typeSet') {
         if (exoticAvailable === 'required') {
           const source = this.intersection[slot].exoticTypeSet;
-          console.log(this.intersection[slot]);
           const index = Math.floor(Math.random() * source.size);
           items.push(`(${Array.from(source)[index]} is:exotic)`);
           exoticAvailable = 'exclude';
@@ -61,11 +60,6 @@ export class AppComponent {
             ...this.intersection[slot][this.randomizationType],
             ...this.intersection[slot].exoticTypeSet,
           ]);
-          console.log(
-            this.intersection[slot][this.randomizationType].size,
-            this.intersection[slot].exoticTypeSet.size,
-            source.size
-          );
           const index = Math.floor(Math.random() * source.size);
           items.push(`(${Array.from(source)[index]})`);
         } else {
@@ -88,7 +82,7 @@ export class AppComponent {
           ]);
           const index = Math.floor(Math.random() * source.size);
           items.push(`(${Array.from(source)[index]})`);
-          if (index > nonExoticSize) {
+          if (index + 1 > nonExoticSize) {
             exoticAvailable = 'exclude';
           }
         } else {

@@ -1,28 +1,47 @@
-<mat-form-field color="accent">
-  <mat-label>Player {{ index + 1 }}</mat-label>
-  <input matInput [(ngModel)]="player.name" />
-</mat-form-field>
-<button
-  type="button"
-  mat-raised-button
-  color="accent"
-  (click)="fileInput.click()"
->
-  Import DIM Weapon CSV
-</button>
-<input
-  hidden
-  (change)="changeListener($event)"
-  #fileInput
-  type="file"
-  id="file"
-/>
-{{ fileName }}
-<button
-  (click)="removePlayer()"
-  mat-icon-button
-  color="warn"
-  aria-label="Remove Player"
->
-  <mat-icon>delete</mat-icon></button
-><br />
+<mat-card class="player-card">
+  <mat-card-title
+    contenteditable="true"
+    (keydown.enter)="blurName($event)"
+    (blur)="blurName($event)"
+  >
+    {{ player.name || 'Player ' + (index + 1) }}
+  </mat-card-title>
+  <mat-card-subtitle>{{
+    fileName || 'Add a DIM Weapons CSV'
+  }}</mat-card-subtitle>
+  <input
+    hidden
+    (change)="changeListener($event)"
+    #fileInput
+    type="file"
+    id="file"
+  />
+  <mat-card-actions>
+    <button
+      *ngIf="!fileName"
+      type="button"
+      mat-raised-button
+      color="accent"
+      (click)="fileInput.click()"
+    >
+      Add CSV
+    </button>
+    <button
+      *ngIf="fileName"
+      type="button"
+      mat-button
+      color="accent"
+      (click)="fileInput.click()"
+    >
+      Update CSV
+    </button>
+    <button
+      (click)="removePlayer()"
+      mat-icon-button
+      color="warn"
+      aria-label="Remove Player"
+    >
+      <mat-icon>delete</mat-icon>
+    </button>
+  </mat-card-actions>
+</mat-card>

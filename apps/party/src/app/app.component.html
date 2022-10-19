@@ -1,5 +1,5 @@
 <div class="main-content">
-  <div class="title-block">
+  <div class="title-block section">
     <div class="title">
       <span class="srl srl-one">SRL</span>¹ is Dead<br />
       Long Live <span class="srl srl-two">SRL</span>²
@@ -9,236 +9,287 @@
       2: Synchronized Random Loadouts
     </div>
   </div>
-  <destiny-player
-    *ngFor="let player of players; index as i"
-    [player]="player"
-    [index]="i"
-  ></destiny-player>
 
-  <button
-    (click)="addPlayer()"
-    mat-mini-fab
-    color="accent"
-    aria-label="Add Player"
-  >
-    <mat-icon>add</mat-icon>
-  </button>
-  <br />
-  <br />
+  <div class="section">
+    <h2>Players</h2>
+    <div class="player-cards">
+      <destiny-player
+        *ngFor="let player of players; index as i"
+        [player]="player"
+        [index]="i"
+      ></destiny-player>
+    </div>
+  </div>
 
-  <mat-form-field color="accent">
-    <mat-label>Minimum Power</mat-label>
-    <input matInput (input)="changeMinPower($event)" />
-  </mat-form-field>
-
-  <div>
-    Commonalities
-    <ul>
-      <li>Kinetic Slot</li>
-      <ul>
-        <li>
-          {{
-            intersection.kineticSlot.exoticSet.size +
-              intersection.kineticSlot.weaponSet.size
-          }}
-          Weapons
-        </li>
-        <ul>
-          <li>{{ intersection.kineticSlot.exoticSet.size }} Exotic</li>
-          <li>{{ intersection.kineticSlot.weaponSet.size }} Non-Exotic</li>
-        </ul>
-        <li>
-          {{ intersection.kineticSlot.archetypeSet.size }}
-          Archetypes
-        </li>
-        <li>{{ intersection.kineticSlot.typeSet.size }} Types</li>
-      </ul>
-      <li>Energy Slot</li>
-      <ul>
-        <li>
-          {{
-            intersection.energySlot.exoticSet.size +
-              intersection.energySlot.weaponSet.size
-          }}
-          Weapons
-        </li>
-        <ul>
-          <li>{{ intersection.energySlot.exoticSet.size }} Exotic</li>
-          <li>{{ intersection.energySlot.weaponSet.size }} Non-Exotic</li>
-        </ul>
-        <li>
-          {{ intersection.energySlot.archetypeSet.size }}
-          Archetypes
-        </li>
-        <li>{{ intersection.energySlot.typeSet.size }} Types</li>
-      </ul>
-      <li>Power Slot</li>
-      <ul>
-        <li>
-          {{
-            intersection.powerSlot.exoticSet.size +
-              intersection.powerSlot.weaponSet.size
-          }}
-          Weapons
-        </li>
-        <ul>
-          <li>{{ intersection.powerSlot.exoticSet.size }} Exotic</li>
-          <li>{{ intersection.powerSlot.weaponSet.size }} Non-Exotic</li>
-        </ul>
-        <li>{{ intersection.powerSlot.archetypeSet.size }} Archetypes</li>
-        <li>{{ intersection.powerSlot.typeSet.size }} Types</li>
-      </ul>
-      <li>Total</li>
-      <ul>
-        <li>
-          {{
-            intersection.kineticSlot.exoticSet.size +
-              intersection.kineticSlot.weaponSet.size +
+  <div class="section">
+    <h2>Commonality Pool</h2>
+    <div class="commonality-cards">
+      <mat-card>
+        <mat-card-title>Kinetic Slot</mat-card-title>
+        <mat-chip-list>
+          <mat-chip class="weapons">
+            {{
+              intersection.kineticSlot.exoticSet.size +
+                intersection.kineticSlot.weaponSet.size
+            }}
+            Weapons
+          </mat-chip>
+          <mat-chip class="exotics">
+            {{ intersection.kineticSlot.exoticSet.size }} Exotics
+          </mat-chip>
+          <mat-chip class="non-exotics">
+            {{ intersection.kineticSlot.weaponSet.size }} Non-Exotics
+          </mat-chip>
+          <mat-chip class="archetypes">
+            {{ intersection.kineticSlot.archetypeSet.size }}
+            Archetypes
+          </mat-chip>
+          <mat-chip class="types">
+            {{ intersection.kineticSlot.typeSet.size }} Types
+          </mat-chip>
+        </mat-chip-list>
+      </mat-card>
+      <mat-card>
+        <mat-card-title>Energy Slot</mat-card-title>
+        <mat-chip-list>
+          <mat-chip class="weapons">
+            {{
               intersection.energySlot.exoticSet.size +
-              intersection.energySlot.weaponSet.size +
+                intersection.energySlot.weaponSet.size
+            }}
+            Weapons
+          </mat-chip>
+          <mat-chip class="exotics">
+            {{ intersection.energySlot.exoticSet.size }} Exotics
+          </mat-chip>
+          <mat-chip class="non-exotics">
+            {{ intersection.energySlot.weaponSet.size }} Non-Exotics
+          </mat-chip>
+          <mat-chip class="archetypes">
+            {{ intersection.energySlot.archetypeSet.size }}
+            Archetypes
+          </mat-chip>
+          <mat-chip class="types">
+            {{ intersection.energySlot.typeSet.size }} Types
+          </mat-chip>
+        </mat-chip-list>
+      </mat-card>
+      <mat-card>
+        <mat-card-title>Power Slot</mat-card-title>
+        <mat-chip-list>
+          <mat-chip class="weapons">
+            {{
               intersection.powerSlot.exoticSet.size +
-              intersection.powerSlot.weaponSet.size
-          }}
-          Weapons
-        </li>
-        <ul>
-          <li>
+                intersection.powerSlot.weaponSet.size
+            }}
+            Weapons
+          </mat-chip>
+          <mat-chip class="exotics">
+            {{ intersection.powerSlot.exoticSet.size }} Exotics
+          </mat-chip>
+          <mat-chip class="non-exotics">
+            {{ intersection.powerSlot.weaponSet.size }} Non-Exotics
+          </mat-chip>
+          <mat-chip class="archetypes">
+            {{ intersection.powerSlot.archetypeSet.size }}
+            Archetypes
+          </mat-chip>
+          <mat-chip class="types">
+            {{ intersection.powerSlot.typeSet.size }} Types
+          </mat-chip>
+        </mat-chip-list>
+      </mat-card>
+      <mat-card>
+        <mat-card-title>Total</mat-card-title>
+        <mat-chip-list>
+          <mat-chip class="weapons">
+            {{
+              intersection.kineticSlot.exoticSet.size +
+                intersection.kineticSlot.weaponSet.size +
+                intersection.energySlot.exoticSet.size +
+                intersection.energySlot.weaponSet.size +
+                intersection.powerSlot.exoticSet.size +
+                intersection.powerSlot.weaponSet.size
+            }}
+            Weapons
+          </mat-chip>
+          <mat-chip class="exotics">
             {{
               intersection.kineticSlot.exoticSet.size +
                 intersection.energySlot.exoticSet.size +
                 intersection.powerSlot.exoticSet.size
             }}
-            Exotic
-          </li>
-          <li>
+            Exotics
+          </mat-chip>
+          <mat-chip class="non-exotics">
             {{
               intersection.kineticSlot.weaponSet.size +
                 intersection.energySlot.weaponSet.size +
                 intersection.powerSlot.weaponSet.size
             }}
-            Non-Exotic
+            Non-Exotics
+          </mat-chip>
+          <mat-chip class="archetypes">
+            {{
+              intersection.kineticSlot.archetypeSet.size +
+                intersection.energySlot.archetypeSet.size +
+                intersection.powerSlot.archetypeSet.size
+            }}
+            Archetypes
+          </mat-chip>
+          <mat-chip class="types">
+            {{
+              intersection.kineticSlot.typeSet.size +
+                intersection.energySlot.typeSet.size +
+                intersection.powerSlot.typeSet.size
+            }}
+            Types
+          </mat-chip>
+        </mat-chip-list>
+      </mat-card>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Options</h2>
+
+    <div class="option-cards">
+      <mat-card>
+        <mat-card-title>Minimum Power</mat-card-title>
+        <mat-card-subtitle
+          >Limit pool for Power Level enabled activities</mat-card-subtitle
+        >
+        <mat-form-field color="accent">
+          <mat-label>Minimum Power</mat-label>
+          <input matInput (input)="changeMinPower($event)" />
+        </mat-form-field>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-title>Exotics</mat-card-title>
+        <mat-radio-group aria-label="Exotics" [(ngModel)]="exotics">
+          <mat-radio-button value="exclude">No Exotic</mat-radio-button>
+          <mat-radio-button value="include" [checked]="true"
+            >Possible Exotic</mat-radio-button
+          >
+          <mat-radio-button value="required">Require Exotic</mat-radio-button>
+        </mat-radio-group>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-title>Randomize</mat-card-title>
+        <mat-radio-group
+          aria-label="Randomization"
+          [(ngModel)]="randomizationType"
+        >
+          <mat-radio-button value="weaponSet" [checked]="true"
+            >Weapons</mat-radio-button
+          >
+          <mat-radio-button value="archetypeSet">Archetypes</mat-radio-button>
+          <mat-radio-button value="typeSet">Types</mat-radio-button>
+        </mat-radio-group>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-title>Discord Integration</mat-card-title>
+        <mat-card-subtitle
+          >Automatically send search text to a Discord
+          channel</mat-card-subtitle
+        >
+        <mat-form-field color="accent">
+          <mat-label>Discord Webhook URL</mat-label>
+          <input matInput [(ngModel)]="discordWebhookUrl" type="password" />
+        </mat-form-field>
+      </mat-card>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>SRL²</h2>
+    <mat-card>
+      <mat-card-title>Randomize</mat-card-title>
+      <div class="code-block">
+        <code>{{
+          searchText || 'Add players, select options, then click the button'
+        }}</code>
+      </div>
+
+      <mat-card-actions>
+        <button color="primary" (click)="randomize()" mat-raised-button>
+          Randomize & Copy to Clipboard
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <div class="section">
+    <h2>A very in-depth and helpful tutorial:</h2>
+
+    <ol>
+      <li>
+        Instruct all players to export their Weapons spreadsheet from DIM's
+        Settings page.
+        <strong>Important:</strong> All players must have DIM set to the same
+        language for this to work. Here's a handy screenshot showing the
+        location of the export button in DIM:
+        <img src="./assets/dim-export.png" />
+      </li>
+      <li>
+        Collect the destinyWeapons.csv files your players just exported. Ask
+        them to rename the CSV file before sending it to you if you'd like to
+        make things easier for yourself.
+      </li>
+      <li>
+        Import a CSV file for each player at the top of this page. You can add a
+        player name to keep track of which file is which, but it's not necessary
+        to do so for the randomizer to work its magic.
+      </li>
+      <li>
+        Choose your randomization type:
+        <ul>
+          <li>
+            <strong>Weapons</strong> will choose a random weapon that all
+            players possess for each weapon slot (e.g. Chroma Rush)
+          </li>
+          <li>
+            <strong>Archetypes</strong> will choose a random weapon archetype
+            that all players possess for each weapon slot (e.g. Kinetic
+            Precision Frame Auto Rifles)
+          </li>
+          <li>
+            <strong>Types</strong> will choose a random weapon type that all
+            players possess for each weapon slot (e.g. Kinetic Auto Rifles)
           </li>
         </ul>
-        <li>
-          {{
-            intersection.kineticSlot.archetypeSet.size +
-              intersection.energySlot.archetypeSet.size +
-              intersection.powerSlot.archetypeSet.size
-          }}
-          Archetypes
-        </li>
-        <li>
-          {{
-            intersection.kineticSlot.typeSet.size +
-              intersection.energySlot.typeSet.size +
-              intersection.powerSlot.typeSet.size
-          }}
-          Types
-        </li>
-      </ul>
-    </ul>
+      </li>
+      <li>
+        Enable or disable exotics. This works slightly differently for each
+        randomization type (and is probably buggy).
+      </li>
+      <li>
+        Click the "Randomize & Copy to Clipboard" button, then paste into your
+        group chat of choice.
+      </li>
+      <li>
+        Have all players copy-paste the string you just sent into their DIM
+        search bar.
+      </li>
+      <li>
+        At this point, you <em>can</em> let your players choose from the search
+        results, but my preference is to request they use the "Randomize from
+        Search" button, pictured here:
+        <img src="./assets/randomize-from-search.png" />
+      </li>
+      <li>
+        Pro tip: Use the Armor Mod Wizard on
+        <a href="https://www.d2checklist.com/gear/weapons" target="_blank"
+          >D2 Checklist</a
+        >
+        to quickly equip relevant mods. Armor Mod Wizard video tutorial
+        <a href="https://www.youtube.com/watch?v=8LblnLMz8_4" target="_blank"
+          >here.</a
+        >
+      </li>
+    </ol>
   </div>
-
-  <div>
-    <mat-radio-group aria-label="Exotics" [(ngModel)]="exotics">
-      <mat-radio-button value="exclude">No Exotic</mat-radio-button>
-      <mat-radio-button value="include" [checked]="true"
-        >Possible Exotic</mat-radio-button
-      >
-      <mat-radio-button value="required">Require Exotic</mat-radio-button>
-    </mat-radio-group>
-  </div>
-  <div>
-    <mat-radio-group
-      aria-label="Randomization Type"
-      [(ngModel)]="randomizationType"
-    >
-      <mat-radio-button value="weaponSet" [checked]="true"
-        >Randomize Weapons</mat-radio-button
-      >
-      <mat-radio-button value="archetypeSet"
-        >Randomize Archetypes</mat-radio-button
-      >
-      <mat-radio-button value="typeSet">Randomize Types</mat-radio-button>
-    </mat-radio-group>
-  </div>
-  <div>
-    <mat-form-field color="accent">
-      <mat-label>Discord Webhook URL</mat-label>
-      <input matInput [(ngModel)]="discordWebhookUrl" type="password" />
-    </mat-form-field>
-  </div>
-  <button color="primary" (click)="randomize()" mat-raised-button>
-    Randomize & Copy to Clipboard
-  </button>
-  <div>{{ searchText }}</div>
-
-  <h3>A very indepth and helpful tutorial:</h3>
-
-  <ol>
-    <li>
-      Instruct all players to export their Weapons spreadsheet from DIM's
-      Settings page.
-      <strong>Important:</strong> All players must have DIM set to the same
-      language for this to work. Here's a handy screenshot showing the location
-      of the export button in DIM:
-      <img src="./assets/dim-export.png" />
-    </li>
-    <li>
-      Collect the destinyWeapons.csv files your players just exported. Ask them
-      to rename the CSV file before sending it to you if you'd like to make
-      things easier for yourself.
-    </li>
-    <li>
-      Import a CSV file for each player at the top of this page. You can add a
-      player name to keep track of which file is which, but it's not necessary
-      to do so for the randomizer to work its magic.
-    </li>
-    <li>
-      Choose your randomization type:
-      <ul>
-        <li>
-          <strong>Weapons</strong> will choose a random weapon that all players
-          possess for each weapon slot (e.g. Chroma Rush)
-        </li>
-        <li>
-          <strong>Archetypes</strong> will choose a random weapon archetype that
-          all players possess for each weapon slot (e.g. Kinetic Precision Frame
-          Auto Rifles)
-        </li>
-        <li>
-          <strong>Types</strong> will choose a random weapon type that all
-          players possess for each weapon slot (e.g. Kinetic Auto Rifles)
-        </li>
-      </ul>
-    </li>
-    <li>
-      Enable or disable exotics. This works slightly differently for each
-      randomization type (and is probably buggy).
-    </li>
-    <li>
-      Click the "Randomize & Copy to Clipboard" button, then paste into your
-      group chat of choice.
-    </li>
-    <li>
-      Have all players copy-paste the string you just sent into their DIM search
-      bar.
-    </li>
-    <li>
-      At this point, you <em>can</em> let your players choose from the search
-      results, but my preference is to request they use the "Randomize from
-      Search" button, pictured here:
-      <img src="./assets/randomize-from-search.png" />
-    </li>
-    <li>
-      Pro tip: Use the Armor Mod Wizard on
-      <a href="https://www.d2checklist.com/gear/weapons" target="_blank"
-        >D2 Checklist</a
-      >
-      to quickly equip relevant mods.
-      <a href="https://www.youtube.com/watch?v=8LblnLMz8_4" target="_blank"
-        >Video tutorial here.</a
-      >
-    </li>
-  </ol>
 </div>
