@@ -97,7 +97,7 @@
     <div class="commonality-cards">
       <mat-card>
         <mat-card-title>Kinetic Slot</mat-card-title>
-        <mat-chip-list>
+        <mat-chip-set>
           <mat-chip class="weapons">
             {{
               intersection.kineticSlot.exoticSet.size +
@@ -118,11 +118,11 @@
           <mat-chip class="types">
             {{ intersection.kineticSlot.typeSet.size }} Types
           </mat-chip>
-        </mat-chip-list>
+        </mat-chip-set>
       </mat-card>
       <mat-card>
         <mat-card-title>Energy Slot</mat-card-title>
-        <mat-chip-list>
+        <mat-chip-set>
           <mat-chip class="weapons">
             {{
               intersection.energySlot.exoticSet.size +
@@ -143,11 +143,11 @@
           <mat-chip class="types">
             {{ intersection.energySlot.typeSet.size }} Types
           </mat-chip>
-        </mat-chip-list>
+        </mat-chip-set>
       </mat-card>
       <mat-card>
         <mat-card-title>Power Slot</mat-card-title>
-        <mat-chip-list>
+        <mat-chip-set>
           <mat-chip class="weapons">
             {{
               intersection.powerSlot.exoticSet.size +
@@ -168,11 +168,11 @@
           <mat-chip class="types">
             {{ intersection.powerSlot.typeSet.size }} Types
           </mat-chip>
-        </mat-chip-list>
+        </mat-chip-set>
       </mat-card>
       <mat-card>
         <mat-card-title>Total</mat-card-title>
-        <mat-chip-list>
+        <mat-chip-set>
           <mat-chip class="weapons">
             {{
               intersection.kineticSlot.exoticSet.size +
@@ -216,14 +216,18 @@
             }}
             Types
           </mat-chip>
-        </mat-chip-list>
+        </mat-chip-set>
       </mat-card>
     </div>
   </div>
 
-  <div class="section">
-    <h2>A very in-depth and helpful tutorial:</h2>
-
+  <mat-expansion-panel hideToggle>
+    <mat-expansion-panel-header>
+      <mat-panel-title> Help </mat-panel-title>
+      <mat-panel-description>
+        A very in-depth and helpful tutorial
+      </mat-panel-description>
+    </mat-expansion-panel-header>
     <ol>
       <li>
         Instruct all players to export their Weapons spreadsheet from DIM's
@@ -281,5 +285,5 @@
         >
       </li>
     </ol>
-  </div>
+  </mat-expansion-panel>
 </div>

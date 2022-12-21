@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
-import { PlayerService } from './player/player.service';
 import { Clipboard } from '@angular/cdk/clipboard';
 import { HttpClient } from '@angular/common/http';
+import { Component } from '@angular/core';
+import { PlayerService } from './player/player.service';
 
 @Component({
   selector: 'destiny-root',

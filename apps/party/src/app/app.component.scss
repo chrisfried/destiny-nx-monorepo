@@ -27,15 +27,6 @@ img {
 ol li {
   padding: 1em 0;
 }
-.mat-radio-button {
-  padding: 0.5em 1em;
-}
-.mat-checkbox {
-  padding: 0.5em 1em;
-}
-.mat-button-base {
-  margin: 0.5em 1em;
-}
 
 .commonality-cards,
 .player-cards,
@@ -44,15 +35,15 @@ ol li {
   gap: 0.5em;
   flex-wrap: wrap;
 
-  .mat-card,
+  .mat-mdc-card,
   destiny-player {
     flex: 1;
 
-    .mat-card-title {
+    .mat-mdc-card-title {
       white-space: nowrap;
     }
   }
-  .mat-chip {
+  .mat-mdc-chip {
     white-space: nowrap;
 
     &.weapons {

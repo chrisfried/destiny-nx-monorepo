@@ -1,5 +1,32 @@
-/* You can add global styles to this file, and also import other style files */
-@import "ag-grid-community/dist/styles/ag-grid.css";
-@import "ag-grid-community/dist/styles/ag-theme-alpine.css";
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+@use '@angular/material' as mat;
+
+// Include non-theme styles for core.
+@include mat.core();
+
+// Define a theme.
+$primary: mat.define-palette(mat.$purple-palette, 700, 500, 800);
+$accent: mat.define-palette(mat.$green-palette, A200, A100, A400);
+
+$theme: mat.define-dark-theme(
+  (
+    color: (
+      primary: $primary,
+      accent: $accent,
+    ),
+    typography: mat.define-typography-config(),
+    density: 0,
+  )
+);
+
+// Include all theme styles for the components.
+@include mat.all-component-themes($theme);
+
+@include mat.typography-hierarchy($theme);
+
+.mat-mdc-radio-button {
+  display: block;
+}
+
+.mat-mdc-card {
+  padding: 0.5em 1em;
+}

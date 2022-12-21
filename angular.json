@@ -1,7 +1,4 @@
 {
-  "cli": {
-    "analytics": false
-  },
   "version": 1,
   "projects": {
     "party": {
@@ -27,7 +24,6 @@
               "apps/party/src/assets"
             ],
             "styles": [
-              "./node_modules/@angular/material/prebuilt-themes/purple-green.css",
               "apps/party/src/styles.scss"
             ],
             "scripts": []
@@ -95,10 +91,10 @@
         "test": {
           "builder": "@nrwl/jest:jest",
           "outputs": [
-            "coverage/apps/party"
+            "{workspaceRoot}/coverage/apps/party"
           ],
           "options": {
-            "jestConfig": "apps/party/jest.config.js",
+            "jestConfig": "apps/party/jest.config.ts",
             "passWithNoTests": true
           }
         }
