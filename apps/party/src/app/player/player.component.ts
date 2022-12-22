@@ -1,10 +1,16 @@
+import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { DestinyPlayer, PlayerService } from './player.service';
 
 @Component({
   selector: 'destiny-player',
   templateUrl: './player.component.html',
   styleUrls: ['./player.component.scss'],
+  standalone: true,
+  imports: [CommonModule, MatIconModule, MatCardModule, MatButtonModule],
 })
 export class PlayerComponent {
   @Input() player: DestinyPlayer = {} as DestinyPlayer;

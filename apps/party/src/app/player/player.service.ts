@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
-import { NgxCsvParser } from 'ngx-csv-parser';
-import { NgxCSVParserError } from 'ngx-csv-parser';
-import { BehaviorSubject, combineLatest } from 'rxjs';
+import { Papa, ParseResult } from 'ngx-papaparse';
+import { BehaviorSubject, Subscription } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -69,7 +68,7 @@ export class PlayerService {
   ]);
   minPower = new BehaviorSubject(0);
 
-  constructor(private ngxCsvParser: NgxCsvParser) {
+  constructor(private papa: Papa) {
     this.addPlayer();
   }
 
@@ -101,6 +100,7 @@ export class PlayerService {
   }
 
   removePlayer(index: number) {
+    this.players[index].subscription?.unsubscribe();
     this.players.splice(index, 1);
     this.updateCombinedSets();
     if (this.players.length < 1) {
@@ -110,187 +110,193 @@ export class PlayerService {
 
   importWeapons(playerIndex: number, file: File) {
     const player = this.players[playerIndex];
+    player.subscription?.unsubscribe();
 
-    combineLatest([
-      this.ngxCsvParser.parse(file, { header: true, delimiter: ',' }),
-      this.minPower,
-    ]).subscribe(
-      ([result, minPower]) => {
-        if (!Array.isArray(result)) {
-          throw result;
-        } else {
-          result = (result as WeaponDefinition[]).map((r) => ({
-            ...r,
-            Name: r.Name.split(' (')[0],
-          }));
+    this.papa.parse(file, {
+      header: true,
+      complete: (result: ParseResult<WeaponDefinition[]>) => {
+        player.subscription = this.minPower.subscribe(
+          (minPower) => {
+            if (!Array.isArray(result?.data)) {
+              throw result;
+            } else {
+              let data = result.data.map((r) => ({
+                ...r,
+                Name: r.Name?.split(' (')[0],
+              }));
 
-          player.weapons = [];
-          player.kineticSlot = {
-            exoticSet: new Set(),
-            exoticTypeSet: new Set(),
-            weaponSet: new Set(),
-            typeSet: new Set(),
-            archetypeSet: new Set(),
-          };
-          player.energySlot = {
-            exoticSet: new Set(),
-            exoticTypeSet: new Set(),
-            weaponSet: new Set(),
-            typeSet: new Set(),
-            archetypeSet: new Set(),
-          };
-          player.powerSlot = {
-            exoticSet: new Set(),
-            exoticTypeSet: new Set(),
-            weaponSet: new Set(),
-            typeSet: new Set(),
-            archetypeSet: new Set(),
-          };
-          result = (result as WeaponDefinition[]).filter(
-            (weapon) => parseInt(weapon.Power) >= minPower
-          );
+              player.weapons = [];
+              player.kineticSlot = {
+                exoticSet: new Set(),
+                exoticTypeSet: new Set(),
+                weaponSet: new Set(),
+                typeSet: new Set(),
+                archetypeSet: new Set(),
+              };
+              player.energySlot = {
+                exoticSet: new Set(),
+                exoticTypeSet: new Set(),
+                weaponSet: new Set(),
+                typeSet: new Set(),
+                archetypeSet: new Set(),
+              };
+              player.powerSlot = {
+                exoticSet: new Set(),
+                exoticTypeSet: new Set(),
+                weaponSet: new Set(),
+                typeSet: new Set(),
+                archetypeSet: new Set(),
+              };
+              data = data.filter(
+                (weapon) => parseInt(weapon.Power) >= minPower
+              );
 
-          console.log(result);
+              data.forEach((row) => {
+                let i = 0;
+                while (i < 15 && !row.Archetype) {
+                  const perk = `Perks ${i}` as keyof WeaponDefinition;
+                  if (row[perk]) {
+                    row.Archetype = row[perk].replace(/\*/g, '');
+                  }
+                  i++;
+                }
+              });
+              player.weapons = data as WeaponDefinition[];
+              player.kineticSlot.exoticSet = new Set(
+                player.weapons
+                  .filter(
+                    (w) => w.Tier === 'Exotic' && w.Category === 'KineticSlot'
+                  )
+                  .map((w) => `name:"${w.Name}"`)
+              );
+              player.kineticSlot.exoticTypeSet = new Set(
+                player.weapons
+                  .filter(
+                    (w) => w.Tier === 'Exotic' && w.Category === 'KineticSlot'
+                  )
+                  .map((w) => `is:${this.dimType(w.Type)} is:kineticslot`)
+              );
+              player.kineticSlot.weaponSet = new Set(
+                player.weapons
+                  .filter(
+                    (w) =>
+                      w.Tier !== 'Exotic' &&
+                      w.Category === 'KineticSlot' &&
+                      !this.classWeaponSet.has(w.Hash)
+                  )
+                  .map((w) => {
+                    return `name:"${w.Name}"`;
+                  })
+              );
+              player.kineticSlot.typeSet = new Set(
+                player.weapons
+                  .filter(
+                    (w) => w.Tier !== 'Exotic' && w.Category === 'KineticSlot'
+                  )
+                  .map((w) => `is:${this.dimType(w.Type)} is:kineticslot`)
+              );
+              player.kineticSlot.archetypeSet = new Set(
+                player.weapons
+                  .filter(
+                    (w) => w.Tier !== 'Exotic' && w.Category === 'KineticSlot'
+                  )
+                  .map(
+                    (w) =>
+                      `perk:"${w.Archetype}" is:${this.dimType(
+                        w.Type
+                      )} is:kineticslot`
+                  )
+              );
+              player.energySlot.exoticSet = new Set(
+                player.weapons
+                  .filter((w) => w.Tier === 'Exotic' && w.Category === 'Energy')
+                  .map((w) => `name:"${w.Name}"`)
+              );
+              player.energySlot.exoticTypeSet = new Set(
+                player.weapons
+                  .filter((w) => w.Tier === 'Exotic' && w.Category === 'Energy')
+                  .map((w) => `is:${this.dimType(w.Type)} is:energy`)
+              );
+              player.energySlot.weaponSet = new Set(
+                player.weapons
+                  .filter(
+                    (w) =>
+                      w.Tier !== 'Exotic' &&
+                      w.Category === 'Energy' &&
+                      !this.classWeaponSet.has(w.Hash)
+                  )
+                  .map((w) => {
+                    return `name:"${w.Name}"`;
+                  })
+              );
+              player.energySlot.typeSet = new Set(
+                player.weapons
+                  .filter((w) => w.Tier !== 'Exotic' && w.Category === 'Energy')
+                  .map((w) => `is:${this.dimType(w.Type)} is:energy`)
+              );
+              player.energySlot.archetypeSet = new Set(
+                player.weapons
+                  .filter((w) => w.Tier !== 'Exotic' && w.Category === 'Energy')
+                  .map(
+                    (w) =>
+                      `perk:"${w.Archetype}" is:${this.dimType(
+                        w.Type
+                      )} is:energy`
+                  )
+              );
+              player.powerSlot.exoticSet = new Set(
+                player.weapons
+                  .filter((w) => w.Tier === 'Exotic' && w.Category === 'Power')
+                  .map((w) => `name:"${w.Name}"`)
+              );
+              player.powerSlot.exoticTypeSet = new Set(
+                player.weapons
+                  .filter((w) => w.Tier === 'Exotic' && w.Category === 'Power')
+                  .map((w) => `is:${this.dimType(w.Type)} is:heavy`)
+              );
+              player.powerSlot.weaponSet = new Set(
+                player.weapons
+                  .filter(
+                    (w) =>
+                      w.Tier !== 'Exotic' &&
+                      w.Category === 'Power' &&
+                      !this.classWeaponSet.has(w.Hash)
+                  )
+                  .map((w) => {
+                    return `name:"${w.Name}"`;
+                  })
+              );
+              player.powerSlot.typeSet = new Set(
+                player.weapons
+                  .filter((w) => w.Tier !== 'Exotic' && w.Category === 'Power')
+                  .map((w) => `is:${this.dimType(w.Type)} is:heavy`)
+              );
+              player.powerSlot.archetypeSet = new Set(
+                player.weapons
+                  .filter((w) => w.Tier !== 'Exotic' && w.Category === 'Power')
+                  .map(
+                    (w) =>
+                      `perk:"${w.Archetype}" is:${this.dimType(
+                        w.Type
+                      )} is:heavy`
+                  )
+              );
+              player.lastImport = new Date();
 
-          result.forEach((row) => {
-            let i = 0;
-            while (i < 15 && !row.Archetype) {
-              if (row[`Perks ${i}`]) {
-                row.Archetype = row[`Perks ${i}`].replace(/\*/g, '');
-              }
-              i++;
+              this.updateCombinedSets();
             }
-          });
-          player.weapons = result as WeaponDefinition[];
-          player.kineticSlot.exoticSet = new Set(
-            player.weapons
-              .filter(
-                (w) => w.Tier === 'Exotic' && w.Category === 'KineticSlot'
-              )
-              .map((w) => `name:"${w.Name}"`)
-          );
-          player.kineticSlot.exoticTypeSet = new Set(
-            player.weapons
-              .filter(
-                (w) => w.Tier === 'Exotic' && w.Category === 'KineticSlot'
-              )
-              .map((w) => `is:${this.dimType(w.Type)} is:kineticslot`)
-          );
-          player.kineticSlot.weaponSet = new Set(
-            player.weapons
-              .filter(
-                (w) =>
-                  w.Tier !== 'Exotic' &&
-                  w.Category === 'KineticSlot' &&
-                  !this.classWeaponSet.has(w.Hash)
-              )
-              .map((w) => {
-                return `name:"${w.Name}"`;
-              })
-          );
-          player.kineticSlot.typeSet = new Set(
-            player.weapons
-              .filter(
-                (w) => w.Tier !== 'Exotic' && w.Category === 'KineticSlot'
-              )
-              .map((w) => `is:${this.dimType(w.Type)} is:kineticslot`)
-          );
-          player.kineticSlot.archetypeSet = new Set(
-            player.weapons
-              .filter(
-                (w) => w.Tier !== 'Exotic' && w.Category === 'KineticSlot'
-              )
-              .map(
-                (w) =>
-                  `perk:"${w.Archetype}" is:${this.dimType(
-                    w.Type
-                  )} is:kineticslot`
-              )
-          );
-          player.energySlot.exoticSet = new Set(
-            player.weapons
-              .filter((w) => w.Tier === 'Exotic' && w.Category === 'Energy')
-              .map((w) => `name:"${w.Name}"`)
-          );
-          player.energySlot.exoticTypeSet = new Set(
-            player.weapons
-              .filter((w) => w.Tier === 'Exotic' && w.Category === 'Energy')
-              .map((w) => `is:${this.dimType(w.Type)} is:energy`)
-          );
-          player.energySlot.weaponSet = new Set(
-            player.weapons
-              .filter(
-                (w) =>
-                  w.Tier !== 'Exotic' &&
-                  w.Category === 'Energy' &&
-                  !this.classWeaponSet.has(w.Hash)
-              )
-              .map((w) => {
-                return `name:"${w.Name}"`;
-              })
-          );
-          player.energySlot.typeSet = new Set(
-            player.weapons
-              .filter((w) => w.Tier !== 'Exotic' && w.Category === 'Energy')
-              .map((w) => `is:${this.dimType(w.Type)} is:energy`)
-          );
-          player.energySlot.archetypeSet = new Set(
-            player.weapons
-              .filter((w) => w.Tier !== 'Exotic' && w.Category === 'Energy')
-              .map(
-                (w) =>
-                  `perk:"${w.Archetype}" is:${this.dimType(w.Type)} is:energy`
-              )
-          );
-          player.powerSlot.exoticSet = new Set(
-            player.weapons
-              .filter((w) => w.Tier === 'Exotic' && w.Category === 'Power')
-              .map((w) => `name:"${w.Name}"`)
-          );
-          player.powerSlot.exoticTypeSet = new Set(
-            player.weapons
-              .filter((w) => w.Tier === 'Exotic' && w.Category === 'Power')
-              .map((w) => `is:${this.dimType(w.Type)} is:heavy`)
-          );
-          player.powerSlot.weaponSet = new Set(
-            player.weapons
-              .filter(
-                (w) =>
-                  w.Tier !== 'Exotic' &&
-                  w.Category === 'Power' &&
-                  !this.classWeaponSet.has(w.Hash)
-              )
-              .map((w) => {
-                return `name:"${w.Name}"`;
-              })
-          );
-          player.powerSlot.typeSet = new Set(
-            player.weapons
-              .filter((w) => w.Tier !== 'Exotic' && w.Category === 'Power')
-              .map((w) => `is:${this.dimType(w.Type)} is:heavy`)
-          );
-          player.powerSlot.archetypeSet = new Set(
-            player.weapons
-              .filter((w) => w.Tier !== 'Exotic' && w.Category === 'Power')
-              .map(
-                (w) =>
-                  `perk:"${w.Archetype}" is:${this.dimType(w.Type)} is:heavy`
-              )
-          );
-          player.lastImport = new Date();
 
-          this.updateCombinedSets();
-        }
-
-        if (!this.players.find((p) => !p.lastImport)) {
-          this.addPlayer();
-        }
+            if (!this.players.find((p) => !p.lastImport)) {
+              this.addPlayer();
+            }
+          },
+          (error) => {
+            this.updateCombinedSets();
+            console.error('Error', error);
+          }
+        );
       },
-      (error: NgxCSVParserError) => {
-        this.updateCombinedSets();
-        console.error('Error', error);
-      }
-    );
+    });
   }
 
   dimType(type: string) {
@@ -576,6 +582,7 @@ export type DestinyPlayer = {
   kineticSlot: WeaponSets;
   energySlot: WeaponSets;
   powerSlot: WeaponSets;
+  subscription?: Subscription;
 };
 
 export type WeaponSets = {
