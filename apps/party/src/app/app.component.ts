@@ -119,7 +119,7 @@ export class AppComponent {
         }
       }
     });
-    this.searchText = `(${items.join(' or ')})${
+    this.searchText = `(${items.join(' or ')}) is:weapon${
       this.minPower ? ` power:>=${this.minPower}` : ``
     }`;
     this.clipboard.copy(this.searchText);

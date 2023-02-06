@@ -122,7 +122,7 @@ export class PlayerService {
             } else {
               let data = result.data.map((r) => ({
                 ...r,
-                Name: r.Name?.split(' (')[0],
+                Name: r.Name?.split(' (')[0].split('v1.')[0],
               }));
 
               player.weapons = [];
