@@ -43,6 +43,7 @@ export class AppComponent {
   searchText = '';
   minPower = 0;
   discordWebhookUrl = '';
+  discordThreadId = '';
 
   constructor(
     private playerService: PlayerService,
@@ -124,8 +125,11 @@ export class AppComponent {
     }`;
     this.clipboard.copy(this.searchText);
     if (this.discordWebhookUrl) {
+      const url = this.discordThreadId
+        ? `${this.discordWebhookUrl}?thread_id=${this.discordThreadId}`
+        : this.discordWebhookUrl;
       this.http
-        .post(this.discordWebhookUrl, {
+        .post(url, {
           content: `\`\`\`${this.searchText}\`\`\``,
         })
         .subscribe();
