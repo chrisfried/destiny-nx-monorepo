@@ -10,7 +10,15 @@
     </div>
   </div>
 
-  <div class="section">
+  <div class="section" *ngIf="manifestState === 'loading'">
+    Loading Destiny Manifest...
+  </div>
+
+  <div class="section" *ngIf="manifestState === 'erred'">
+    Error loading Destiny Manifest
+  </div>
+
+  <div class="section" *ngIf="manifestState === 'ready'">
     <mat-card>
       <mat-card-title>SRL²</mat-card-title>
       <div class="code-block">
@@ -18,6 +26,7 @@
           searchText || 'Add players, select options, then click the button'
         }}</code>
       </div>
+      <div *ngIf="requiresPull">Some items may be in Collections</div>
 
       <mat-card-actions>
         <button color="primary" (click)="randomize()" mat-raised-button>
@@ -27,44 +36,77 @@
     </mat-card>
   </div>
 
-  <div class="section">
+  <div class="section" *ngIf="manifestState === 'ready'">
     <h2>Players</h2>
+    <form (ngSubmit)="addPlayer()">
+      <mat-form-field class="example-full-width">
+        <mat-label>Bungie Name</mat-label>
+        <input
+          matInput
+          placeholder="Guardian#1234"
+          [(ngModel)]="nameInput"
+          [ngModelOptions]="{ standalone: true }"
+        />
+      </mat-form-field>
+      <button color="primary" type="submit" mat-raised-button>Add</button>
+    </form>
     <div class="player-cards">
       <destiny-player
         *ngFor="let player of players; index as i"
         [player]="player"
         [index]="i"
       ></destiny-player>
+      <mat-card>
+        <mat-card-title>Commonality</mat-card-title>
+        <mat-chip-set>
+          <mat-chip class="weapons">
+            {{ getWeaponCount() }}
+            Weapons
+          </mat-chip>
+          <mat-chip class="non-exotics">
+            {{ getNonExoticCount() }} Non-Exotics
+          </mat-chip>
+          <mat-chip class="non-exotics">
+            {{ getPullableNonExoticCount() }} Collection Non-Exotics
+          </mat-chip>
+          <!-- <mat-chip class="archetypes">
+            {{ getArchetypeCount() }}
+            Archetypes
+          </mat-chip>
+          <mat-chip class="types"> {{ getTypeCount() }} Types </mat-chip> -->
+          <mat-chip class="exotics"> {{ getExoticCount() }} Exotics </mat-chip>
+          <mat-chip class="exotics">
+            {{ getPullableExoticCount() }} Collection Exotics
+          </mat-chip>
+        </mat-chip-set>
+      </mat-card>
     </div>
   </div>
 
-  <div class="section">
+  <div class="section" *ngIf="manifestState === 'ready'">
     <h2>Options</h2>
 
     <div class="option-cards">
       <mat-card>
-        <mat-card-title>Minimum Power</mat-card-title>
-        <mat-card-subtitle
-          >Limit pool for Power Level enabled activities</mat-card-subtitle
-        >
-        <mat-form-field color="accent">
-          <mat-label>Minimum Power</mat-label>
-          <input matInput (input)="changeMinPower($event)" />
-        </mat-form-field>
-      </mat-card>
-
-      <mat-card>
         <mat-card-title>Exotics</mat-card-title>
         <mat-radio-group aria-label="Exotics" [(ngModel)]="exotics">
-          <mat-radio-button value="exclude">No Exotic</mat-radio-button>
+          <mat-radio-button value="exclude">Never</mat-radio-button>
           <mat-radio-button value="include" [checked]="true"
-            >Possible Exotic</mat-radio-button
+            >Sometimes</mat-radio-button
           >
-          <mat-radio-button value="required">Require Exotic</mat-radio-button>
+          <mat-radio-button value="required">Always</mat-radio-button>
         </mat-radio-group>
       </mat-card>
 
       <mat-card>
+        <mat-card-title>Collections</mat-card-title>
+        <mat-checkbox [(ngModel)]="collectionExotics">Exotics</mat-checkbox>
+        <mat-checkbox [(ngModel)]="collectionNonExotics"
+          >Non-Exotics</mat-checkbox
+        >
+      </mat-card>
+
+      <!-- <mat-card>
         <mat-card-title>Randomize</mat-card-title>
         <mat-radio-group
           aria-label="Randomization"
@@ -76,7 +118,18 @@
           <mat-radio-button value="archetypeSet">Archetypes</mat-radio-button>
           <mat-radio-button value="typeSet">Types</mat-radio-button>
         </mat-radio-group>
-      </mat-card>
+      </mat-card> -->
+
+      <!-- <mat-card>
+        <mat-card-title>Minimum Power</mat-card-title>
+        <mat-card-subtitle
+          >Limit pool for Power Level enabled activities</mat-card-subtitle
+        >
+        <mat-form-field color="accent">
+          <mat-label>Minimum Power</mat-label>
+          <input matInput (input)="changeMinPower($event)" />
+        </mat-form-field>
+      </mat-card> -->
 
       <mat-card>
         <mat-card-title>Discord Integration</mat-card-title>
@@ -96,136 +149,7 @@
     </div>
   </div>
 
-  <div class="section">
-    <h2>Pool Stats</h2>
-    <div class="commonality-cards">
-      <mat-card>
-        <mat-card-title>Kinetic Slot</mat-card-title>
-        <mat-chip-set>
-          <mat-chip class="weapons">
-            {{
-              intersection.kineticSlot.exoticSet.size +
-                intersection.kineticSlot.weaponSet.size
-            }}
-            Weapons
-          </mat-chip>
-          <mat-chip class="exotics">
-            {{ intersection.kineticSlot.exoticSet.size }} Exotics
-          </mat-chip>
-          <mat-chip class="non-exotics">
-            {{ intersection.kineticSlot.weaponSet.size }} Non-Exotics
-          </mat-chip>
-          <mat-chip class="archetypes">
-            {{ intersection.kineticSlot.archetypeSet.size }}
-            Archetypes
-          </mat-chip>
-          <mat-chip class="types">
-            {{ intersection.kineticSlot.typeSet.size }} Types
-          </mat-chip>
-        </mat-chip-set>
-      </mat-card>
-      <mat-card>
-        <mat-card-title>Energy Slot</mat-card-title>
-        <mat-chip-set>
-          <mat-chip class="weapons">
-            {{
-              intersection.energySlot.exoticSet.size +
-                intersection.energySlot.weaponSet.size
-            }}
-            Weapons
-          </mat-chip>
-          <mat-chip class="exotics">
-            {{ intersection.energySlot.exoticSet.size }} Exotics
-          </mat-chip>
-          <mat-chip class="non-exotics">
-            {{ intersection.energySlot.weaponSet.size }} Non-Exotics
-          </mat-chip>
-          <mat-chip class="archetypes">
-            {{ intersection.energySlot.archetypeSet.size }}
-            Archetypes
-          </mat-chip>
-          <mat-chip class="types">
-            {{ intersection.energySlot.typeSet.size }} Types
-          </mat-chip>
-        </mat-chip-set>
-      </mat-card>
-      <mat-card>
-        <mat-card-title>Power Slot</mat-card-title>
-        <mat-chip-set>
-          <mat-chip class="weapons">
-            {{
-              intersection.powerSlot.exoticSet.size +
-                intersection.powerSlot.weaponSet.size
-            }}
-            Weapons
-          </mat-chip>
-          <mat-chip class="exotics">
-            {{ intersection.powerSlot.exoticSet.size }} Exotics
-          </mat-chip>
-          <mat-chip class="non-exotics">
-            {{ intersection.powerSlot.weaponSet.size }} Non-Exotics
-          </mat-chip>
-          <mat-chip class="archetypes">
-            {{ intersection.powerSlot.archetypeSet.size }}
-            Archetypes
-          </mat-chip>
-          <mat-chip class="types">
-            {{ intersection.powerSlot.typeSet.size }} Types
-          </mat-chip>
-        </mat-chip-set>
-      </mat-card>
-      <mat-card>
-        <mat-card-title>Total</mat-card-title>
-        <mat-chip-set>
-          <mat-chip class="weapons">
-            {{
-              intersection.kineticSlot.exoticSet.size +
-                intersection.kineticSlot.weaponSet.size +
-                intersection.energySlot.exoticSet.size +
-                intersection.energySlot.weaponSet.size +
-                intersection.powerSlot.exoticSet.size +
-                intersection.powerSlot.weaponSet.size
-            }}
-            Weapons
-          </mat-chip>
-          <mat-chip class="exotics">
-            {{
-              intersection.kineticSlot.exoticSet.size +
-                intersection.energySlot.exoticSet.size +
-                intersection.powerSlot.exoticSet.size
-            }}
-            Exotics
-          </mat-chip>
-          <mat-chip class="non-exotics">
-            {{
-              intersection.kineticSlot.weaponSet.size +
-                intersection.energySlot.weaponSet.size +
-                intersection.powerSlot.weaponSet.size
-            }}
-            Non-Exotics
-          </mat-chip>
-          <mat-chip class="archetypes">
-            {{
-              intersection.kineticSlot.archetypeSet.size +
-                intersection.energySlot.archetypeSet.size +
-                intersection.powerSlot.archetypeSet.size
-            }}
-            Archetypes
-          </mat-chip>
-          <mat-chip class="types">
-            {{
-              intersection.kineticSlot.typeSet.size +
-                intersection.energySlot.typeSet.size +
-                intersection.powerSlot.typeSet.size
-            }}
-            Types
-          </mat-chip>
-        </mat-chip-set>
-      </mat-card>
-    </div>
-  </div>
-
-  <mat-expansion-panel hideToggle>
+  <!-- <mat-expansion-panel hideToggle *ngIf="manifestState === 'ready'">
     <mat-expansion-panel-header>
       <mat-panel-title> Help </mat-panel-title>
       <mat-panel-description>
@@ -301,5 +225,5 @@
         >
       </li>
     </ol>
-  </mat-expansion-panel>
+  </mat-expansion-panel> -->
 </div>

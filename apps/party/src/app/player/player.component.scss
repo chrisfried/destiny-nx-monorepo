@@ -1,3 +1,33 @@
 .mat-card-actions {
   white-space: nowrap;
 }
+.mat-mdc-chip {
+  white-space: nowrap;
+
+  &.weapons {
+    background: rgb(80, 118, 163);
+    background: linear-gradient(
+      135deg,
+      rgba(80, 118, 163, 1) 0%,
+      rgba(78, 50, 99, 1) 50%,
+      rgba(205, 173, 50, 1) 100%
+    );
+  }
+  &.exotics {
+    background: rgba(205, 173, 50, 1);
+  }
+  &.non-exotics {
+    background: rgb(80, 118, 163);
+    background: linear-gradient(
+      135deg,
+      rgba(80, 118, 163, 1) 0%,
+      rgba(78, 50, 99, 1) 100%
+    );
+  }
+  &.archetypes {
+    background: #585b59;
+  }
+  &.types {
+    background: #4a4b4a;
+  }
+}

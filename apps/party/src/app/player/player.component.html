@@ -1,40 +1,32 @@
 <mat-card class="player-card">
-  <mat-card-title
-    contenteditable="true"
-    (keydown.enter)="blurName($event)"
-    (blur)="blurName($event)"
-  >
-    {{ player.name || 'Player ' + (index + 1) }}
+  <mat-card-title>
+    {{ player.name }}
   </mat-card-title>
-  <mat-card-subtitle>{{
-    fileName || 'Add a DIM Weapons CSV'
-  }}</mat-card-subtitle>
-  <input
-    hidden
-    (change)="changeListener($event)"
-    #fileInput
-    type="file"
-    id="file"
-  />
+  <mat-card-content *ngIf="player.status === 'loading'">
+    Loading player...
+  </mat-card-content>
+  <mat-chip-set *ngIf="player.status === 'ready'">
+    <mat-chip class="weapons">
+      {{ getWeaponCount() }}
+      Weapons
+    </mat-chip>
+    <mat-chip class="non-exotics">
+      {{ getNonExoticCount() }} Non-Exotics
+    </mat-chip>
+    <mat-chip class="non-exotics">
+      {{ getPullableNonExoticCount() }} Collection Non-Exotics
+    </mat-chip>
+    <!-- <mat-chip class="archetypes">
+      {{ getArchetypeCount() }}
+      Archetypes
+    </mat-chip>
+    <mat-chip class="types"> {{ getTypeCount() }} Types </mat-chip> -->
+    <mat-chip class="exotics"> {{ getExoticCount() }} Exotics </mat-chip>
+    <mat-chip class="exotics">
+      {{ getPullableExoticCount() }} Collection Exotics
+    </mat-chip>
+  </mat-chip-set>
   <mat-card-actions>
-    <button
-      *ngIf="!fileName"
-      type="button"
-      mat-raised-button
-      color="accent"
-      (click)="fileInput.click()"
-    >
-      Add CSV
-    </button>
-    <button
-      *ngIf="fileName"
-      type="button"
-      mat-button
-      color="accent"
-      (click)="fileInput.click()"
-    >
-      Update CSV
-    </button>
     <button
       (click)="removePlayer()"
       mat-icon-button

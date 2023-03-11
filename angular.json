@@ -134,6 +134,143 @@
       "implicitDependencies": [
         "party"
       ]
+    },
+    "scrubland": {
+      "projectType": "application",
+      "root": "apps/scrubland",
+      "sourceRoot": "apps/scrubland/src",
+      "prefix": "scrubland",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "outputs": [
+            "{options.outputPath}"
+          ],
+          "options": {
+            "outputPath": "dist/apps/scrubland",
+            "index": "apps/scrubland/src/index.html",
+            "main": "apps/scrubland/src/main.ts",
+            "polyfills": [
+              "zone.js"
+            ],
+            "tsConfig": "apps/scrubland/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "apps/scrubland/src/favicon.ico",
+              "apps/scrubland/src/assets"
+            ],
+            "styles": [
+              "apps/scrubland/src/styles.scss"
+            ],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "browserTarget": "scrubland:build:production"
+            },
+            "development": {
+              "browserTarget": "scrubland:build:development"
+            }
+          },
+          "defaultConfiguration": "development",
+          "options": {
+            "port": 4200
+          }
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "scrubland:build"
+          }
+        },
+        "lint": {
+          "builder": "@nrwl/linter:eslint",
+          "outputs": [
+            "{options.outputFile}"
+          ],
+          "options": {
+            "lintFilePatterns": [
+              "apps/scrubland/**/*.ts",
+              "apps/scrubland/**/*.html"
+            ]
+          }
+        },
+        "test": {
+          "builder": "@nrwl/jest:jest",
+          "outputs": [
+            "{workspaceRoot}/coverage/{projectRoot}"
+          ],
+          "options": {
+            "jestConfig": "apps/scrubland/jest.config.ts",
+            "passWithNoTests": true
+          }
+        }
+      },
+      "tags": []
+    },
+    "scrubland-e2e": {
+      "root": "apps/scrubland-e2e",
+      "sourceRoot": "apps/scrubland-e2e/src",
+      "projectType": "application",
+      "architect": {
+        "e2e": {
+          "builder": "@nrwl/cypress:cypress",
+          "options": {
+            "cypressConfig": "apps/scrubland-e2e/cypress.json",
+            "devServerTarget": "scrubland:serve:development",
+            "testingType": "e2e"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "scrubland:serve:production"
+            }
+          }
+        },
+        "lint": {
+          "builder": "@nrwl/linter:eslint",
+          "outputs": [
+            "{options.outputFile}"
+          ],
+          "options": {
+            "lintFilePatterns": [
+              "apps/scrubland-e2e/**/*.{js,ts}"
+            ]
+          }
+        }
+      },
+      "tags": [],
+      "implicitDependencies": [
+        "scrubland"
+      ]
     }
   }
 }
