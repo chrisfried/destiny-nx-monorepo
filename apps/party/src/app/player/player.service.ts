@@ -226,8 +226,11 @@ export class PlayerService {
             collectibleHashes.forEach((collectibleHash) => {
               const collectible =
                 profileCollectiblesData.collectibles[Number(collectibleHash)];
-
-              if (collectible.state === DestinyCollectibleState.None) {
+              if (
+                collectible.state === DestinyCollectibleState.None ||
+                DestinyCollectibleState.CannotAffordMaterialRequirements ||
+                DestinyCollectibleState.InventorySpaceUnavailable
+              ) {
                 this.sortCollectible(player, Number(collectibleHash));
               }
             });

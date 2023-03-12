@@ -29,7 +29,12 @@
       <div *ngIf="requiresPull">Some items may be in Collections</div>
 
       <mat-card-actions>
-        <button color="primary" (click)="randomize()" mat-raised-button>
+        <button
+          [disabled]="playerService.combinedSetsLoading"
+          color="primary"
+          (click)="randomize()"
+          mat-raised-button
+        >
           Randomize & Copy to Clipboard
         </button>
       </mat-card-actions>
@@ -148,11 +153,21 @@
         >
         <mat-form-field color="accent">
           <mat-label>Discord Webhook URL</mat-label>
-          <input matInput [(ngModel)]="discordWebhookUrl" type="password" />
+          <input
+            title="Discord Webhook URL"
+            matInput
+            [(ngModel)]="discordWebhookUrl"
+            type="password"
+          />
         </mat-form-field>
         <mat-form-field color="accent">
           <mat-label>Thread ID (optional)</mat-label>
-          <input matInput [(ngModel)]="discordThreadId" type="password" />
+          <input
+            title="Thread ID"
+            matInput
+            [(ngModel)]="discordThreadId"
+            type="password"
+          />
         </mat-form-field>
       </mat-card>
     </div>
@@ -167,7 +182,10 @@
     </mat-expansion-panel-header>
 
     Make sure all Guardians have the following two options enabled in their
-    <a href="https://www.bungie.net/7/en/User/Account/Privacy" target="_blank"
+    <a
+      rel="noopener"
+      href="https://www.bungie.net/7/en/User/Account/Privacy"
+      target="_blank"
       >Bungie.net Privacy Settings</a
     >:
     <ul>
