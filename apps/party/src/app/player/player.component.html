@@ -1,32 +1,75 @@
 <mat-card class="player-card">
-  <mat-card-title>
-    {{ player.name }}
-  </mat-card-title>
+  <mat-card-header>
+    <mat-card-title>
+      {{ player.name }}
+    </mat-card-title>
+    <mat-card-subtitle
+      *ngIf="
+        player.status === 'ready' &&
+        player.suspectNonEquippedDisabled &&
+        !player.suspectProgressionDisabled
+      "
+    >
+      Vault inaccessible. Enable "Show my non-equipped Inventory" on Bungie.net
+    </mat-card-subtitle>
+    <mat-card-subtitle
+      *ngIf="
+        player.status === 'ready' &&
+        player.suspectProgressionDisabled &&
+        !player.suspectNonEquippedDisabled
+      "
+    >
+      Collections inaccessible. Enable "Show my progression" on Bungie.net
+    </mat-card-subtitle>
+    <mat-card-subtitle
+      *ngIf="
+        player.status === 'ready' &&
+        player.suspectProgressionDisabled &&
+        player.suspectNonEquippedDisabled
+      "
+    >
+      Vault and Collections inaccessible. Enable "Show my non-equipped
+      Inventory" and "Show my progression" on Bungie.net
+    </mat-card-subtitle>
+  </mat-card-header>
   <mat-card-content *ngIf="player.status === 'loading'">
-    Loading player...
+    <mat-spinner></mat-spinner>
   </mat-card-content>
-  <mat-chip-set *ngIf="player.status === 'ready'">
-    <mat-chip class="weapons">
-      {{ getWeaponCount() }}
-      Weapons
-    </mat-chip>
-    <mat-chip class="non-exotics">
-      {{ getNonExoticCount() }} Non-Exotics
-    </mat-chip>
-    <mat-chip class="non-exotics">
-      {{ getPullableNonExoticCount() }} Collection Non-Exotics
-    </mat-chip>
-    <!-- <mat-chip class="archetypes">
+  <mat-card-content *ngIf="player.status === 'erred'">
+    Error loading Guardian
+  </mat-card-content>
+  <mat-card-content *ngIf="player.status === 'ready'">
+    <mat-chip-set>
+      <mat-chip class="weapons">
+        {{ getWeaponCount() }}
+        Weapons
+      </mat-chip>
+      <mat-chip class="non-exotics">
+        {{ getNonExoticCount() }} Non-Exotics
+      </mat-chip>
+      <mat-chip class="non-exotics">
+        {{ getPullableNonExoticCount() }} Collection Non-Exotics
+      </mat-chip>
+      <!-- <mat-chip class="archetypes">
       {{ getArchetypeCount() }}
       Archetypes
     </mat-chip>
     <mat-chip class="types"> {{ getTypeCount() }} Types </mat-chip> -->
-    <mat-chip class="exotics"> {{ getExoticCount() }} Exotics </mat-chip>
-    <mat-chip class="exotics">
-      {{ getPullableExoticCount() }} Collection Exotics
-    </mat-chip>
-  </mat-chip-set>
+      <mat-chip class="exotics"> {{ getExoticCount() }} Exotics </mat-chip>
+      <mat-chip class="exotics">
+        {{ getPullableExoticCount() }} Collection Exotics
+      </mat-chip>
+    </mat-chip-set>
+  </mat-card-content>
   <mat-card-actions>
+    <button
+      [disabled]="player.status === 'loading'"
+      (click)="refreshPlayer()"
+      mat-icon-button
+      aria-label="Refresh Player"
+    >
+      <mat-icon>refresh</mat-icon>
+    </button>
     <button
       (click)="removePlayer()"
       mat-icon-button

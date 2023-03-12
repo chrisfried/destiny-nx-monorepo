@@ -7,7 +7,15 @@ import {
   getProfile,
   searchDestinyPlayerByBungieName,
 } from 'bungie-api-ts/destiny2';
-import { BehaviorSubject, from, lastValueFrom, map, switchMap } from 'rxjs';
+import {
+  BehaviorSubject,
+  catchError,
+  EMPTY,
+  from,
+  lastValueFrom,
+  map,
+  switchMap,
+} from 'rxjs';
 import { ManifestService } from '../manifest/manifest.service';
 
 @Injectable({
@@ -29,16 +37,16 @@ export class PlayerService {
       pullableNonExotics: {
         [slotHash: number]: Set<number>;
       };
-      types: {
-        [slotHash: number]: {
-          [typeHash: number]: Set<number>;
-        };
-      };
-      archetypes: {
-        [slotHash: number]: {
-          [archetypeHash: number]: Set<number>;
-        };
-      };
+      // types: {
+      //   [slotHash: number]: {
+      //     [typeHash: number]: Set<number>;
+      //   };
+      // };
+      // archetypes: {
+      //   [slotHash: number]: {
+      //     [archetypeHash: number]: Set<number>;
+      //   };
+      // };
     };
   } = {
     union: {
@@ -46,16 +54,16 @@ export class PlayerService {
       nonExotics: {},
       pullableExotics: {},
       pullableNonExotics: {},
-      types: {},
-      archetypes: {},
+      // types: {},
+      // archetypes: {},
     },
     intersection: {
       exotics: {},
       nonExotics: {},
       pullableExotics: {},
       pullableNonExotics: {},
-      types: {},
-      archetypes: {},
+      // types: {},
+      // archetypes: {},
     },
   };
   classWeaponSet = new Set([
@@ -70,17 +78,21 @@ export class PlayerService {
     '569799274',
   ]);
   minPower = new BehaviorSubject(0);
+  combinedSetsLoading = false;
 
   constructor(private http: HttpClient, private manifest: ManifestService) {}
 
   addPlayer(name: string) {
+    this.combinedSetsLoading = true;
     const player: DestinyPlayer = {
       name: name,
       status: 'loading',
+      suspectNonEquippedDisabled: false,
+      suspectProgressionDisabled: false,
       exotics: {},
       nonExotics: {},
-      types: {},
-      archetypes: {},
+      // types: {},
+      // archetypes: {},
       pullableExotics: {},
       pullableNonExotics: {},
     };
@@ -94,7 +106,16 @@ export class PlayerService {
   }
 
   fetchWeapons(player: DestinyPlayer) {
+    this.combinedSetsLoading = true;
     player.status = 'loading';
+    player.suspectNonEquippedDisabled = false;
+    player.suspectProgressionDisabled = false;
+    player.exotics = {};
+    player.nonExotics = {};
+    // player.types =  {};
+    // player.archetypes =  {};
+    player.pullableExotics = {};
+    player.pullableNonExotics = {};
 
     from(
       searchDestinyPlayerByBungieName(
@@ -172,6 +193,8 @@ export class PlayerService {
             profileInventoryData.items.forEach((item) => {
               this.sortItem(player, item.itemHash);
             });
+          } else {
+            player.suspectNonEquippedDisabled = true;
           }
 
           const characterCollectiblesData =
@@ -208,11 +231,19 @@ export class PlayerService {
                 this.sortCollectible(player, Number(collectibleHash));
               }
             });
+          } else {
+            player.suspectProgressionDisabled = true;
           }
 
           player.status = 'ready';
           console.log(player);
           this.updateCombinedSets();
+        }),
+        catchError((err, caught) => {
+          player.status = 'erred';
+          this.updateCombinedSets();
+
+          return EMPTY;
         })
       )
       .subscribe();
@@ -230,30 +261,30 @@ export class PlayerService {
           ? player.nonExotics[slotHash].add(itemHash)
           : (player.nonExotics[slotHash] = new Set([itemHash]));
       }
-      this.manifest.types[slotHash].forEach((typeHash) => {
-        if (this.manifest.typesLookup[slotHash][typeHash].has(itemHash)) {
-          if (!player.types[slotHash]) {
-            player.types[slotHash] = {};
-          }
-          player.types[slotHash][typeHash]
-            ? player.types[slotHash][typeHash].add(itemHash)
-            : (player.types[slotHash][typeHash] = new Set([itemHash]));
-        }
-      });
-      this.manifest.archetypes[slotHash].forEach((archetypeHash) => {
-        if (
-          this.manifest.archetypesLookup[slotHash][archetypeHash].has(itemHash)
-        ) {
-          if (!player.archetypes[slotHash]) {
-            player.archetypes[slotHash] = {};
-          }
-          player.archetypes[slotHash][archetypeHash]
-            ? player.archetypes[slotHash][archetypeHash].add(itemHash)
-            : (player.archetypes[slotHash][archetypeHash] = new Set([
-                itemHash,
-              ]));
-        }
-      });
+      // this.manifest.types[slotHash].forEach((typeHash) => {
+      //   if (this.manifest.typesLookup[slotHash][typeHash].has(itemHash)) {
+      //     if (!player.types[slotHash]) {
+      //       player.types[slotHash] = {};
+      //     }
+      //     player.types[slotHash][typeHash]
+      //       ? player.types[slotHash][typeHash].add(itemHash)
+      //       : (player.types[slotHash][typeHash] = new Set([itemHash]));
+      //   }
+      // });
+      // this.manifest.archetypes[slotHash].forEach((archetypeHash) => {
+      //   if (
+      //     this.manifest.archetypesLookup[slotHash][archetypeHash].has(itemHash)
+      //   ) {
+      //     if (!player.archetypes[slotHash]) {
+      //       player.archetypes[slotHash] = {};
+      //     }
+      //     player.archetypes[slotHash][archetypeHash]
+      //       ? player.archetypes[slotHash][archetypeHash].add(itemHash)
+      //       : (player.archetypes[slotHash][archetypeHash] = new Set([
+      //           itemHash,
+      //         ]));
+      //   }
+      // });
     });
   }
 
@@ -272,31 +303,30 @@ export class PlayerService {
     });
   }
 
-  dimType(type: string) {
-    switch (type) {
-      case 'Submachine Gun':
-        return 'smg';
-      case 'Combat Bow':
-        return 'bow';
-      default:
-        return type.replace(/\s/g, '').toLowerCase();
-    }
-  }
-
   updateCombinedSets() {
+    console.log('updating combined');
+    console.log(this.players.filter((p) => p.status === 'loading'));
+    const loading =
+      this.players.filter((p) => p.status === 'loading').length > 0;
+    if (loading) {
+      console.log(this.players.map((p) => p.status));
+      console.log('still loading');
+      return;
+    }
+
     this.manifest.slotHashSet.forEach((slotHash) => {
       this.combinedSets.union.exotics[slotHash] = new Set();
       this.combinedSets.union.nonExotics[slotHash] = new Set();
       this.combinedSets.union.pullableExotics[slotHash] = new Set();
       this.combinedSets.union.pullableNonExotics[slotHash] = new Set();
-      this.combinedSets.union.types[slotHash] = {};
-      this.manifest.types[slotHash].forEach((typeHash) => {
-        this.combinedSets.union.types[slotHash][typeHash] = new Set();
-      });
-      this.combinedSets.union.archetypes[slotHash] = {};
-      this.manifest.archetypes[slotHash].forEach((archetypeHash) => {
-        this.combinedSets.union.archetypes[slotHash][archetypeHash] = new Set();
-      });
+      // this.combinedSets.union.types[slotHash] = {};
+      // this.manifest.types[slotHash].forEach((typeHash) => {
+      //   this.combinedSets.union.types[slotHash][typeHash] = new Set();
+      // });
+      // this.combinedSets.union.archetypes[slotHash] = {};
+      // this.manifest.archetypes[slotHash].forEach((archetypeHash) => {
+      //   this.combinedSets.union.archetypes[slotHash][archetypeHash] = new Set();
+      // });
     });
 
     this.players
@@ -319,19 +349,19 @@ export class PlayerService {
             ...this.combinedSets.union.pullableNonExotics[slotHash],
             ...(player.pullableNonExotics[slotHash] || []),
           ]);
-          this.manifest.types[slotHash].forEach((typeHash) => {
-            this.combinedSets.union.types[slotHash][typeHash] = new Set([
-              ...this.combinedSets.union.types[slotHash][typeHash],
-              ...(player.types[slotHash][typeHash] || []),
-            ]);
-          });
-          this.manifest.archetypes[slotHash].forEach((archetypeHash) => {
-            this.combinedSets.union.archetypes[slotHash][archetypeHash] =
-              new Set([
-                ...this.combinedSets.union.archetypes[slotHash][archetypeHash],
-                ...(player.archetypes[slotHash][archetypeHash] || []),
-              ]);
-          });
+          // this.manifest.types[slotHash].forEach((typeHash) => {
+          //   this.combinedSets.union.types[slotHash][typeHash] = new Set([
+          //     ...this.combinedSets.union.types[slotHash][typeHash],
+          //     ...(player.types[slotHash][typeHash] || []),
+          //   ]);
+          // });
+          // this.manifest.archetypes[slotHash].forEach((archetypeHash) => {
+          //   this.combinedSets.union.archetypes[slotHash][archetypeHash] =
+          //     new Set([
+          //       ...this.combinedSets.union.archetypes[slotHash][archetypeHash],
+          //       ...(player.archetypes[slotHash][archetypeHash] || []),
+          //     ]);
+          // });
         });
       });
 
@@ -348,19 +378,19 @@ export class PlayerService {
       this.combinedSets.intersection.pullableNonExotics[slotHash] = new Set([
         ...this.combinedSets.union.pullableNonExotics[slotHash],
       ]);
-      this.combinedSets.intersection.types[slotHash] = {};
-      this.manifest.types[slotHash].forEach((typeHash) => {
-        this.combinedSets.intersection.types[slotHash][typeHash] = new Set([
-          ...this.combinedSets.union.types[slotHash][typeHash],
-        ]);
-      });
-      this.combinedSets.intersection.archetypes[slotHash] = {};
-      this.manifest.archetypes[slotHash].forEach((archetypeHash) => {
-        this.combinedSets.intersection.archetypes[slotHash][archetypeHash] =
-          new Set([
-            ...this.combinedSets.union.archetypes[slotHash][archetypeHash],
-          ]);
-      });
+      // this.combinedSets.intersection.types[slotHash] = {};
+      // this.manifest.types[slotHash].forEach((typeHash) => {
+      //   this.combinedSets.intersection.types[slotHash][typeHash] = new Set([
+      //     ...this.combinedSets.union.types[slotHash][typeHash],
+      //   ]);
+      // });
+      // this.combinedSets.intersection.archetypes[slotHash] = {};
+      // this.manifest.archetypes[slotHash].forEach((archetypeHash) => {
+      //   this.combinedSets.intersection.archetypes[slotHash][archetypeHash] =
+      //     new Set([
+      //       ...this.combinedSets.union.archetypes[slotHash][archetypeHash],
+      //     ]);
+      // });
     });
 
     this.players
@@ -402,33 +432,35 @@ export class PlayerService {
                 )
               : []
           );
-          this.manifest.types[slotHash].forEach((typeHash) => {
-            this.combinedSets.intersection.types[slotHash][typeHash] = new Set(
-              player.types[slotHash][typeHash]
-                ? [
-                    ...this.combinedSets.intersection.types[slotHash][typeHash],
-                  ].filter((itemHash: number) =>
-                    player.types[slotHash][typeHash].has(itemHash)
-                  )
-                : []
-            );
-          });
-          this.manifest.archetypes[slotHash].forEach((archetypeHash) => {
-            this.combinedSets.intersection.archetypes[slotHash][archetypeHash] =
-              new Set(
-                player.archetypes[slotHash][archetypeHash]
-                  ? [
-                      ...this.combinedSets.intersection.archetypes[slotHash][
-                        archetypeHash
-                      ],
-                    ].filter((itemHash: number) =>
-                      player.archetypes[slotHash][archetypeHash].has(itemHash)
-                    )
-                  : []
-              );
-          });
+          // this.manifest.types[slotHash].forEach((typeHash) => {
+          //   this.combinedSets.intersection.types[slotHash][typeHash] = new Set(
+          //     player.types[slotHash][typeHash]
+          //       ? [
+          //           ...this.combinedSets.intersection.types[slotHash][typeHash],
+          //         ].filter((itemHash: number) =>
+          //           player.types[slotHash][typeHash].has(itemHash)
+          //         )
+          //       : []
+          //   );
+          // });
+          // this.manifest.archetypes[slotHash].forEach((archetypeHash) => {
+          //   this.combinedSets.intersection.archetypes[slotHash][archetypeHash] =
+          //     new Set(
+          //       player.archetypes[slotHash][archetypeHash]
+          //         ? [
+          //             ...this.combinedSets.intersection.archetypes[slotHash][
+          //               archetypeHash
+          //             ],
+          //           ].filter((itemHash: number) =>
+          //             player.archetypes[slotHash][archetypeHash].has(itemHash)
+          //           )
+          //         : []
+          //     );
+          // });
         });
       });
+
+    this.combinedSetsLoading = false;
 
     console.log(this.combinedSets);
   }
@@ -437,23 +469,25 @@ export class PlayerService {
 export type DestinyPlayer = {
   name: string;
   lastImport?: Date;
-  status: 'loading' | 'ready' | 'error';
+  status: 'loading' | 'ready' | 'erred';
+  suspectNonEquippedDisabled: boolean;
+  suspectProgressionDisabled: boolean;
   exotics: {
     [slotHash: number]: Set<number>;
   };
   nonExotics: {
     [slotHash: number]: Set<number>;
   };
-  types: {
-    [slotHash: number]: {
-      [typeHash: number]: Set<number>;
-    };
-  };
-  archetypes: {
-    [slotHash: number]: {
-      [archetypeHash: number]: Set<number>;
-    };
-  };
+  // types: {
+  //   [slotHash: number]: {
+  //     [typeHash: number]: Set<number>;
+  //   };
+  // };
+  // archetypes: {
+  //   [slotHash: number]: {
+  //     [archetypeHash: number]: Set<number>;
+  //   };
+  // };
   pullableExotics: {
     [slotHash: number]: Set<number>;
   };

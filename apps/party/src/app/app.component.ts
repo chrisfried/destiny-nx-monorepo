@@ -14,6 +14,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
 import { DestinyInventoryItemDefinition } from 'bungie-api-ts/destiny2';
 // import { BungieAuthService } from './bungie-auth/bungie-auth.service';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ManifestService } from './manifest/manifest.service';
 import { PlayerComponent } from './player/player.component';
 import { PlayerService } from './player/player.service';
@@ -38,6 +39,7 @@ import { PlayerService } from './player/player.service';
     MatRadioModule,
     PlayerComponent,
     MatCheckboxModule,
+    MatProgressSpinnerModule,
   ],
 })
 export class AppComponent {
@@ -56,7 +58,7 @@ export class AppComponent {
   requiresPull = false;
 
   constructor(
-    private playerService: PlayerService,
+    public playerService: PlayerService,
     private manifestService: ManifestService,
     private clipboard: Clipboard,
     private http: HttpClient
@@ -230,28 +232,28 @@ export class AppComponent {
     return count;
   }
 
-  getArchetypeCount(): number {
-    let count = 0;
-    const slotHashes = Object.keys(this.intersection.archetypes);
-    slotHashes.forEach((slotHash) => {
-      count += Object.keys(
-        this.intersection.archetypes[Number(slotHash)]
-      ).filter(
-        (key) =>
-          this.intersection.archetypes[Number(slotHash)][Number(key)].size > 0
-      ).length;
-    });
-    return count;
-  }
+  // getArchetypeCount(): number {
+  //   let count = 0;
+  //   const slotHashes = Object.keys(this.intersection.archetypes);
+  //   slotHashes.forEach((slotHash) => {
+  //     count += Object.keys(
+  //       this.intersection.archetypes[Number(slotHash)]
+  //     ).filter(
+  //       (key) =>
+  //         this.intersection.archetypes[Number(slotHash)][Number(key)].size > 0
+  //     ).length;
+  //   });
+  //   return count;
+  // }
 
-  getTypeCount(): number {
-    let count = 0;
-    const slotHashes = Object.keys(this.intersection.types);
-    slotHashes.forEach((slotHash) => {
-      count += Object.keys(this.intersection.types[Number(slotHash)]).filter(
-        (key) => this.intersection.types[Number(slotHash)][Number(key)].size > 0
-      ).length;
-    });
-    return count;
-  }
+  // getTypeCount(): number {
+  //   let count = 0;
+  //   const slotHashes = Object.keys(this.intersection.types);
+  //   slotHashes.forEach((slotHash) => {
+  //     count += Object.keys(this.intersection.types[Number(slotHash)]).filter(
+  //       (key) => this.intersection.types[Number(slotHash)][Number(key)].size > 0
+  //     ).length;
+  //   });
+  //   return count;
+  // }
 }

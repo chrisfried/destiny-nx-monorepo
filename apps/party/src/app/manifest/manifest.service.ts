@@ -48,14 +48,14 @@ export class ManifestService {
       [typeHash: number]: Set<number>;
     };
   } = {};
-  archetypes: {
-    [slotHash: number]: Set<number>;
-  } = {};
-  archetypesLookup: {
-    [slotHash: number]: {
-      [archetypeHash: number]: Set<number>;
-    };
-  } = {};
+  // archetypes: {
+  //   [slotHash: number]: Set<number>;
+  // } = {};
+  // archetypesLookup: {
+  //   [slotHash: number]: {
+  //     [archetypeHash: number]: Set<number>;
+  //   };
+  // } = {};
 
   pullableExotics: {
     [slotHash: number]: Set<number>;
@@ -389,50 +389,50 @@ export class ManifestService {
                             ]));
                       }
 
-                      const itemCategory = item.itemCategoryHashes
-                        ? item.itemCategoryHashes[
-                            item.itemCategoryHashes.length - 1
-                          ]
-                        : undefined;
+                      // const itemCategory = item.itemCategoryHashes
+                      //   ? item.itemCategoryHashes[
+                      //       item.itemCategoryHashes.length - 1
+                      //     ]
+                      //   : undefined;
 
-                      if (itemCategory) {
-                        this.types[slotHash]
-                          ? this.types[slotHash].add(itemCategory)
-                          : (this.types[slotHash] = new Set([itemCategory]));
+                      // if (itemCategory) {
+                      //   this.types[slotHash]
+                      //     ? this.types[slotHash].add(itemCategory)
+                      //     : (this.types[slotHash] = new Set([itemCategory]));
 
-                        if (!this.typesLookup[slotHash]) {
-                          this.typesLookup[slotHash] = {};
-                        }
+                      //   if (!this.typesLookup[slotHash]) {
+                      //     this.typesLookup[slotHash] = {};
+                      //   }
 
-                        this.typesLookup[slotHash][itemCategory]
-                          ? this.typesLookup[slotHash][itemCategory].add(
-                              item.hash
-                            )
-                          : (this.typesLookup[slotHash][itemCategory] = new Set(
-                              [item.hash]
-                            ));
-                      }
+                      //   this.typesLookup[slotHash][itemCategory]
+                      //     ? this.typesLookup[slotHash][itemCategory].add(
+                      //         item.hash
+                      //       )
+                      //     : (this.typesLookup[slotHash][itemCategory] = new Set(
+                      //         [item.hash]
+                      //       ));
+                      // }
 
-                      const archetypeHash =
-                        item.sockets?.socketEntries[0].singleInitialItemHash;
-                      if (archetypeHash) {
-                        this.archetypes[slotHash]
-                          ? this.archetypes[slotHash].add(archetypeHash)
-                          : (this.archetypes[slotHash] = new Set([
-                              archetypeHash,
-                            ]));
+                      // const archetypeHash =
+                      //   item.sockets?.socketEntries[0].singleInitialItemHash;
+                      // if (archetypeHash) {
+                      //   this.archetypes[slotHash]
+                      //     ? this.archetypes[slotHash].add(archetypeHash)
+                      //     : (this.archetypes[slotHash] = new Set([
+                      //         archetypeHash,
+                      //       ]));
 
-                        if (!this.archetypesLookup[slotHash]) {
-                          this.archetypesLookup[slotHash] = {};
-                        }
+                      //   if (!this.archetypesLookup[slotHash]) {
+                      //     this.archetypesLookup[slotHash] = {};
+                      //   }
 
-                        this.archetypesLookup[slotHash][archetypeHash]
-                          ? this.archetypesLookup[slotHash][archetypeHash].add(
-                              item.hash
-                            )
-                          : (this.archetypesLookup[slotHash][archetypeHash] =
-                              new Set([item.hash]));
-                      }
+                      //   this.archetypesLookup[slotHash][archetypeHash]
+                      //     ? this.archetypesLookup[slotHash][archetypeHash].add(
+                      //         item.hash
+                      //       )
+                      //     : (this.archetypesLookup[slotHash][archetypeHash] =
+                      //         new Set([item.hash]));
+                      // }
                     }
                   });
                 });
@@ -444,8 +444,8 @@ export class ManifestService {
           console.log('Non-Exotic Lookup', this.nonExoticLookup);
           console.log('(Non-Exotic) Types', this.types);
           console.log('(Non-Exotic) Types Lookup', this.typesLookup);
-          console.log('(Non-Exotic) Archetypes', this.archetypes);
-          console.log('(Non-Exotic) Archetypes Lookup', this.archetypesLookup);
+          // console.log('(Non-Exotic) Archetypes', this.archetypes);
+          // console.log('(Non-Exotic) Archetypes Lookup', this.archetypesLookup);
 
           console.log('Pullable Exotics', this.pullableExotics);
           console.log('Pullable Non-Exotics', this.pullableNonExotics);

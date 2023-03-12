@@ -11,7 +11,7 @@
   </div>
 
   <div class="section" *ngIf="manifestState === 'loading'">
-    Loading Destiny Manifest...
+    <mat-spinner></mat-spinner>
   </div>
 
   <div class="section" *ngIf="manifestState === 'erred'">
@@ -23,7 +23,7 @@
       <mat-card-title>SRL²</mat-card-title>
       <div class="code-block">
         <code>{{
-          searchText || 'Add players, select options, then click the button'
+          searchText || 'Add Guardians, select options, then click the button'
         }}</code>
       </div>
       <div *ngIf="requiresPull">Some items may be in Collections</div>
@@ -37,7 +37,7 @@
   </div>
 
   <div class="section" *ngIf="manifestState === 'ready'">
-    <h2>Players</h2>
+    <h2>Guardians</h2>
     <form (ngSubmit)="addPlayer()">
       <mat-form-field class="example-full-width">
         <mat-label>Bungie Name</mat-label>
@@ -57,33 +57,42 @@
         [index]="i"
       ></destiny-player>
       <mat-card>
-        <mat-card-title>Commonality</mat-card-title>
-        <mat-chip-set>
-          <mat-chip class="weapons">
-            {{ getWeaponCount() }}
-            Weapons
-          </mat-chip>
-          <mat-chip class="non-exotics">
-            {{ getNonExoticCount() }} Non-Exotics
-          </mat-chip>
-          <mat-chip class="non-exotics">
-            {{ getPullableNonExoticCount() }} Collection Non-Exotics
-          </mat-chip>
-          <!-- <mat-chip class="archetypes">
+        <mat-card-header>
+          <mat-card-title>Commonality</mat-card-title>
+        </mat-card-header>
+        <mat-card-content *ngIf="playerService.combinedSetsLoading">
+          <mat-spinner></mat-spinner>
+        </mat-card-content>
+        <mat-card-content *ngIf="!playerService.combinedSetsLoading">
+          <mat-chip-set>
+            <mat-chip class="weapons">
+              {{ getWeaponCount() }}
+              Weapons
+            </mat-chip>
+            <mat-chip class="non-exotics">
+              {{ getNonExoticCount() }} Non-Exotics
+            </mat-chip>
+            <mat-chip class="non-exotics">
+              {{ getPullableNonExoticCount() }} Collection Non-Exotics
+            </mat-chip>
+            <!-- <mat-chip class="archetypes">
             {{ getArchetypeCount() }}
             Archetypes
           </mat-chip>
           <mat-chip class="types"> {{ getTypeCount() }} Types </mat-chip> -->
-          <mat-chip class="exotics"> {{ getExoticCount() }} Exotics </mat-chip>
-          <mat-chip class="exotics">
-            {{ getPullableExoticCount() }} Collection Exotics
-          </mat-chip>
-        </mat-chip-set>
+            <mat-chip class="exotics">
+              {{ getExoticCount() }} Exotics
+            </mat-chip>
+            <mat-chip class="exotics">
+              {{ getPullableExoticCount() }} Collection Exotics
+            </mat-chip>
+          </mat-chip-set>
+        </mat-card-content>
       </mat-card>
     </div>
   </div>
 
-  <div class="section" *ngIf="manifestState === 'ready'">
+  <div class="section">
     <h2>Options</h2>
 
     <div class="option-cards">
@@ -149,7 +158,7 @@
     </div>
   </div>
 
-  <mat-expansion-panel hideToggle *ngIf="manifestState === 'ready'">
+  <mat-expansion-panel hideToggle>
     <mat-expansion-panel-header>
       <mat-panel-title> Help </mat-panel-title>
       <!-- <mat-panel-description>
@@ -157,7 +166,7 @@
       </mat-panel-description> -->
     </mat-expansion-panel-header>
 
-    Make sure all players have the following two options enabled in their
+    Make sure all Guardians have the following two options enabled in their
     <a href="https://www.bungie.net/7/en/User/Account/Privacy" target="_blank"
       >Bungie.net Privacy Settings</a
     >:
@@ -165,6 +174,7 @@
       <li>Show my non-equipped Inventory</li>
       <li>Show my progression</li>
     </ul>
+    It may take a few minutes for Privacy Settings changes to be applied.
 
     <!-- <ol>
       <li>

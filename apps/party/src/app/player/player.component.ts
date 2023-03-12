@@ -4,8 +4,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DestinyPlayer, PlayerService } from './player.service';
-
 @Component({
   selector: 'destiny-player',
   templateUrl: './player.component.html',
@@ -17,6 +18,8 @@ import { DestinyPlayer, PlayerService } from './player.service';
     MatCardModule,
     MatButtonModule,
     MatChipsModule,
+    MatListModule,
+    MatProgressSpinnerModule,
   ],
 })
 export class PlayerComponent {
@@ -24,6 +27,10 @@ export class PlayerComponent {
   @Input() index = 0;
 
   constructor(private playerService: PlayerService) {}
+
+  refreshPlayer() {
+    this.playerService.fetchWeapons(this.player);
+  }
 
   removePlayer() {
     this.playerService.removePlayer(this.index);
@@ -78,21 +85,21 @@ export class PlayerComponent {
     return count;
   }
 
-  getArchetypeCount(): number {
-    let count = 0;
-    const slotHashes = Object.keys(this.player.archetypes);
-    slotHashes.forEach((slotHash) => {
-      count += Object.keys(this.player.archetypes[Number(slotHash)]).length;
-    });
-    return count;
-  }
+  // getArchetypeCount(): number {
+  //   let count = 0;
+  //   const slotHashes = Object.keys(this.player.archetypes);
+  //   slotHashes.forEach((slotHash) => {
+  //     count += Object.keys(this.player.archetypes[Number(slotHash)]).length;
+  //   });
+  //   return count;
+  // }
 
-  getTypeCount(): number {
-    let count = 0;
-    const slotHashes = Object.keys(this.player.types);
-    slotHashes.forEach((slotHash) => {
-      count += Object.keys(this.player.types[Number(slotHash)]).length;
-    });
-    return count;
-  }
+  // getTypeCount(): number {
+  //   let count = 0;
+  //   const slotHashes = Object.keys(this.player.types);
+  //   slotHashes.forEach((slotHash) => {
+  //     count += Object.keys(this.player.types[Number(slotHash)]).length;
+  //   });
+  //   return count;
+  // }
 }
