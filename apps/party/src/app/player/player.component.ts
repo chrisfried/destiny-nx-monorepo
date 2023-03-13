@@ -6,6 +6,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { getCollectibleDef } from '@d2api/manifest';
 import { ManifestService } from '../manifest/manifest.service';
 import { DestinyPlayer, PlayerService } from './player.service';
 @Component({
@@ -52,8 +53,7 @@ export class PlayerComponent {
         }
         if (this.collectionExotics && this.player.pullableExotics[slotHash]) {
           this.player.pullableExotics[slotHash].forEach((collectibleHash) => {
-            const collectible =
-              this.manifestService.defs.Collectible?.get(collectibleHash);
+            const collectible = getCollectibleDef(collectibleHash);
             countSet.add(collectible?.itemHash);
           });
         }
@@ -66,8 +66,7 @@ export class PlayerComponent {
         this.player.pullableNonExotics[slotHash]
       ) {
         this.player.pullableNonExotics[slotHash].forEach((collectibleHash) => {
-          const collectible =
-            this.manifestService.defs.Collectible?.get(collectibleHash);
+          const collectible = getCollectibleDef(collectibleHash);
           countSet.add(collectible?.itemHash);
         });
       }
@@ -83,8 +82,7 @@ export class PlayerComponent {
       }
       if (this.collectionExotics && this.player.pullableExotics[slotHash]) {
         this.player.pullableExotics[slotHash].forEach((collectibleHash) => {
-          const collectible =
-            this.manifestService.defs.Collectible?.get(collectibleHash);
+          const collectible = getCollectibleDef(collectibleHash);
           countSet.add(collectible?.itemHash);
         });
       }
@@ -103,30 +101,11 @@ export class PlayerComponent {
         this.player.pullableNonExotics[slotHash]
       ) {
         this.player.pullableNonExotics[slotHash].forEach((collectibleHash) => {
-          const collectible =
-            this.manifestService.defs.Collectible?.get(collectibleHash);
+          const collectible = getCollectibleDef(collectibleHash);
           countSet.add(collectible?.itemHash);
         });
       }
     });
     return countSet.size;
   }
-
-  // getArchetypeCount(): number {
-  //   let count = 0;
-  //   const slotHashes = Object.keys(this.player.archetypes);
-  //   slotHashes.forEach((slotHash) => {
-  //     count += Object.keys(this.player.archetypes[Number(slotHash)]).length;
-  //   });
-  //   return count;
-  // }
-
-  // getTypeCount(): number {
-  //   let count = 0;
-  //   const slotHashes = Object.keys(this.player.types);
-  //   slotHashes.forEach((slotHash) => {
-  //     count += Object.keys(this.player.types[Number(slotHash)]).length;
-  //   });
-  //   return count;
-  // }
 }

@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { getCollectibleDef } from '@d2api/manifest';
 import { BungieMembershipType } from 'bungie-api-ts/content';
 import {
   DestinyCollectibleState,
@@ -37,16 +38,6 @@ export class PlayerService {
       pullableNonExotics: {
         [slotHash: number]: Set<number>;
       };
-      // types: {
-      //   [slotHash: number]: {
-      //     [typeHash: number]: Set<number>;
-      //   };
-      // };
-      // archetypes: {
-      //   [slotHash: number]: {
-      //     [archetypeHash: number]: Set<number>;
-      //   };
-      // };
     };
   } = {
     union: {
@@ -54,16 +45,12 @@ export class PlayerService {
       nonExotics: {},
       pullableExotics: {},
       pullableNonExotics: {},
-      // types: {},
-      // archetypes: {},
     },
     intersection: {
       exotics: {},
       nonExotics: {},
       pullableExotics: {},
       pullableNonExotics: {},
-      // types: {},
-      // archetypes: {},
     },
   };
   classWeaponSet = new Set([
@@ -247,9 +234,12 @@ export class PlayerService {
                 profileCollectiblesData.collectibles[Number(collectibleHash)];
               if (
                 collectible.state === DestinyCollectibleState.None ||
-                DestinyCollectibleState.CannotAffordMaterialRequirements ||
-                DestinyCollectibleState.InventorySpaceUnavailable
+                collectible.state ===
+                  DestinyCollectibleState.CannotAffordMaterialRequirements ||
+                collectible.state ===
+                  DestinyCollectibleState.InventorySpaceUnavailable
               ) {
+                console.log(collectible.state);
                 this.sortCollectible(player, Number(collectibleHash));
               }
             });
@@ -283,30 +273,6 @@ export class PlayerService {
           ? player.nonExotics[slotHash].add(itemHash)
           : (player.nonExotics[slotHash] = new Set([itemHash]));
       }
-      // this.manifest.types[slotHash].forEach((typeHash) => {
-      //   if (this.manifest.typesLookup[slotHash][typeHash].has(itemHash)) {
-      //     if (!player.types[slotHash]) {
-      //       player.types[slotHash] = {};
-      //     }
-      //     player.types[slotHash][typeHash]
-      //       ? player.types[slotHash][typeHash].add(itemHash)
-      //       : (player.types[slotHash][typeHash] = new Set([itemHash]));
-      //   }
-      // });
-      // this.manifest.archetypes[slotHash].forEach((archetypeHash) => {
-      //   if (
-      //     this.manifest.archetypesLookup[slotHash][archetypeHash].has(itemHash)
-      //   ) {
-      //     if (!player.archetypes[slotHash]) {
-      //       player.archetypes[slotHash] = {};
-      //     }
-      //     player.archetypes[slotHash][archetypeHash]
-      //       ? player.archetypes[slotHash][archetypeHash].add(itemHash)
-      //       : (player.archetypes[slotHash][archetypeHash] = new Set([
-      //           itemHash,
-      //         ]));
-      //   }
-      // });
     });
   }
 
@@ -316,6 +282,10 @@ export class PlayerService {
         player.pullableExotics[slotHash]
           ? player.pullableExotics[slotHash].add(collectibleHash)
           : (player.pullableExotics[slotHash] = new Set([collectibleHash]));
+        console.log(
+          collectibleHash,
+          getCollectibleDef(collectibleHash)?.displayProperties.name
+        );
       }
       if (this.manifest.pullableNonExotics[slotHash].has(collectibleHash)) {
         player.pullableNonExotics[slotHash]
@@ -341,14 +311,6 @@ export class PlayerService {
       this.combinedSets.union.nonExotics[slotHash] = new Set();
       this.combinedSets.union.pullableExotics[slotHash] = new Set();
       this.combinedSets.union.pullableNonExotics[slotHash] = new Set();
-      // this.combinedSets.union.types[slotHash] = {};
-      // this.manifest.types[slotHash].forEach((typeHash) => {
-      //   this.combinedSets.union.types[slotHash][typeHash] = new Set();
-      // });
-      // this.combinedSets.union.archetypes[slotHash] = {};
-      // this.manifest.archetypes[slotHash].forEach((archetypeHash) => {
-      //   this.combinedSets.union.archetypes[slotHash][archetypeHash] = new Set();
-      // });
     });
 
     this.players
@@ -371,19 +333,6 @@ export class PlayerService {
             ...this.combinedSets.union.pullableNonExotics[slotHash],
             ...(player.pullableNonExotics[slotHash] || []),
           ]);
-          // this.manifest.types[slotHash].forEach((typeHash) => {
-          //   this.combinedSets.union.types[slotHash][typeHash] = new Set([
-          //     ...this.combinedSets.union.types[slotHash][typeHash],
-          //     ...(player.types[slotHash][typeHash] || []),
-          //   ]);
-          // });
-          // this.manifest.archetypes[slotHash].forEach((archetypeHash) => {
-          //   this.combinedSets.union.archetypes[slotHash][archetypeHash] =
-          //     new Set([
-          //       ...this.combinedSets.union.archetypes[slotHash][archetypeHash],
-          //       ...(player.archetypes[slotHash][archetypeHash] || []),
-          //     ]);
-          // });
         });
       });
 
@@ -400,19 +349,6 @@ export class PlayerService {
       this.combinedSets.intersection.pullableNonExotics[slotHash] = new Set([
         ...this.combinedSets.union.pullableNonExotics[slotHash],
       ]);
-      // this.combinedSets.intersection.types[slotHash] = {};
-      // this.manifest.types[slotHash].forEach((typeHash) => {
-      //   this.combinedSets.intersection.types[slotHash][typeHash] = new Set([
-      //     ...this.combinedSets.union.types[slotHash][typeHash],
-      //   ]);
-      // });
-      // this.combinedSets.intersection.archetypes[slotHash] = {};
-      // this.manifest.archetypes[slotHash].forEach((archetypeHash) => {
-      //   this.combinedSets.intersection.archetypes[slotHash][archetypeHash] =
-      //     new Set([
-      //       ...this.combinedSets.union.archetypes[slotHash][archetypeHash],
-      //     ]);
-      // });
     });
 
     this.players
@@ -454,31 +390,6 @@ export class PlayerService {
                 )
               : []
           );
-          // this.manifest.types[slotHash].forEach((typeHash) => {
-          //   this.combinedSets.intersection.types[slotHash][typeHash] = new Set(
-          //     player.types[slotHash][typeHash]
-          //       ? [
-          //           ...this.combinedSets.intersection.types[slotHash][typeHash],
-          //         ].filter((itemHash: number) =>
-          //           player.types[slotHash][typeHash].has(itemHash)
-          //         )
-          //       : []
-          //   );
-          // });
-          // this.manifest.archetypes[slotHash].forEach((archetypeHash) => {
-          //   this.combinedSets.intersection.archetypes[slotHash][archetypeHash] =
-          //     new Set(
-          //       player.archetypes[slotHash][archetypeHash]
-          //         ? [
-          //             ...this.combinedSets.intersection.archetypes[slotHash][
-          //               archetypeHash
-          //             ],
-          //           ].filter((itemHash: number) =>
-          //             player.archetypes[slotHash][archetypeHash].has(itemHash)
-          //           )
-          //         : []
-          //     );
-          // });
         });
       });
 
@@ -502,16 +413,6 @@ export type DestinyPlayer = {
   nonExotics: {
     [slotHash: number]: Set<number>;
   };
-  // types: {
-  //   [slotHash: number]: {
-  //     [typeHash: number]: Set<number>;
-  //   };
-  // };
-  // archetypes: {
-  //   [slotHash: number]: {
-  //     [archetypeHash: number]: Set<number>;
-  //   };
-  // };
   pullableExotics: {
     [slotHash: number]: Set<number>;
   };

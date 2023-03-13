@@ -23,7 +23,8 @@
     <mat-card-content>
       <div class="code-block">
         <code>{{
-          searchText || 'Add Guardians, select options, then click the button'
+          searchText ||
+            'Add Guardians, select options, then click the button to generate a DIM search query'
         }}</code>
       </div>
     </mat-card-content>
@@ -162,17 +163,23 @@
       <mat-panel-title> Help </mat-panel-title>
     </mat-expansion-panel-header>
 
-    Make sure all Guardians have the following two options enabled in their
-    <a
-      rel="noopener"
-      href="https://www.bungie.net/7/en/User/Account/Privacy"
-      target="_blank"
-      >Bungie.net Privacy Settings</a
-    >:
+    <p>
+      Make sure all Guardians have the following two options enabled in their
+      <a
+        rel="noopener"
+        href="https://www.bungie.net/7/en/User/Account/Privacy"
+        target="_blank"
+        >Bungie.net Privacy Settings</a
+      >:
+    </p>
     <ul>
       <li>Show my non-equipped Inventory</li>
       <li>Show my progression</li>
     </ul>
-    It may take a few minutes for Privacy Settings changes to be applied.
+    <p>It may take a few minutes for Privacy Settings changes to be applied.</p>
+    <img
+      alt="screenshot showing the location of the relevant settings on bungie.net"
+      src="./assets/privacy.png"
+    />
   </mat-expansion-panel>
 </div>

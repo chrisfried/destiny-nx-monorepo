@@ -11,10 +11,10 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatRadioModule } from '@angular/material/radio';
-import { DestinyInventoryItemDefinition } from 'bungie-api-ts/destiny2';
-// import { BungieAuthService } from './bungie-auth/bungie-auth.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatRadioModule } from '@angular/material/radio';
+import { getCollectibleDef, getInventoryItemDef } from '@d2api/manifest';
+import { DestinyInventoryItemDefinition } from 'bungie-api-ts/destiny2';
 import { ManifestService } from './manifest/manifest.service';
 import { PlayerComponent } from './player/player.component';
 import { PlayerService } from './player/player.service';
@@ -111,8 +111,7 @@ export class AppComponent {
           if (this.collectionExotics) {
             this.intersection.pullableExotics[slotHash].forEach(
               (collectibleHash) => {
-                const collectible =
-                  this.manifestService.defs.Collectible?.get(collectibleHash);
+                const collectible = getCollectibleDef(collectibleHash);
                 if (collectible?.itemHash) {
                   pool.add(collectible.itemHash);
                 }
@@ -126,7 +125,7 @@ export class AppComponent {
             this.requiresPull = true;
           }
 
-          const item = this.manifestService.defs.InventoryItem?.get(itemHash);
+          const item = getInventoryItemDef(itemHash);
 
           if (item) {
             items.push(item);
@@ -142,8 +141,7 @@ export class AppComponent {
       if (this.collectionNonExotics) {
         this.intersection.pullableNonExotics[slotHash].forEach(
           (collectibleHash) => {
-            const collectible =
-              this.manifestService.defs.Collectible?.get(collectibleHash);
+            const collectible = getCollectibleDef(collectibleHash);
             if (collectible?.itemHash) {
               pool.add(collectible.itemHash);
             }
@@ -157,7 +155,7 @@ export class AppComponent {
         this.requiresPull = true;
       }
 
-      const item = this.manifestService.defs.InventoryItem?.get(itemHash);
+      const item = getInventoryItemDef(itemHash);
 
       if (item) {
         items.push(item);
@@ -199,8 +197,7 @@ export class AppComponent {
         ) {
           this.intersection.pullableExotics[slotHash].forEach(
             (collectibleHash) => {
-              const collectible =
-                this.manifestService.defs.Collectible?.get(collectibleHash);
+              const collectible = getCollectibleDef(collectibleHash);
               countSet.add(collectible?.itemHash);
             }
           );
@@ -218,8 +215,7 @@ export class AppComponent {
       ) {
         this.intersection.pullableNonExotics[slotHash].forEach(
           (collectibleHash) => {
-            const collectible =
-              this.manifestService.defs.Collectible?.get(collectibleHash);
+            const collectible = getCollectibleDef(collectibleHash);
             countSet.add(collectible?.itemHash);
           }
         );
@@ -243,8 +239,7 @@ export class AppComponent {
       ) {
         this.intersection.pullableExotics[slotHash].forEach(
           (collectibleHash) => {
-            const collectible =
-              this.manifestService.defs.Collectible?.get(collectibleHash);
+            const collectible = getCollectibleDef(collectibleHash);
             countSet.add(collectible?.itemHash);
           }
         );
@@ -268,8 +263,7 @@ export class AppComponent {
       ) {
         this.intersection.pullableNonExotics[slotHash].forEach(
           (collectibleHash) => {
-            const collectible =
-              this.manifestService.defs.Collectible?.get(collectibleHash);
+            const collectible = getCollectibleDef(collectibleHash);
             countSet.add(collectible?.itemHash);
           }
         );
@@ -277,29 +271,4 @@ export class AppComponent {
     });
     return countSet.size;
   }
-
-  // getArchetypeCount(): number {
-  //   let count = 0;
-  //   const slotHashes = Object.keys(this.intersection.archetypes);
-  //   slotHashes.forEach((slotHash) => {
-  //     count += Object.keys(
-  //       this.intersection.archetypes[Number(slotHash)]
-  //     ).filter(
-  //       (key) =>
-  //         this.intersection.archetypes[Number(slotHash)][Number(key)].size > 0
-  //     ).length;
-  //   });
-  //   return count;
-  // }
-
-  // getTypeCount(): number {
-  //   let count = 0;
-  //   const slotHashes = Object.keys(this.intersection.types);
-  //   slotHashes.forEach((slotHash) => {
-  //     count += Object.keys(this.intersection.types[Number(slotHash)]).filter(
-  //       (key) => this.intersection.types[Number(slotHash)][Number(key)].size > 0
-  //     ).length;
-  //   });
-  //   return count;
-  // }
 }
