@@ -160,12 +160,31 @@ export class PlayerService {
                 DestinyComponentType.CharacterInventories,
                 DestinyComponentType.ProfileInventories,
                 DestinyComponentType.Collectibles,
+                DestinyComponentType.Characters,
               ],
             }
           );
         }),
         map((res) => {
           console.log(res);
+
+          const charactersData = res.Response.characters.data;
+          if (charactersData) {
+            const keys = Object.keys(charactersData);
+
+            keys.sort((a, b) => {
+              return (
+                new Date(charactersData[b].dateLastPlayed).valueOf() -
+                new Date(charactersData[a].dateLastPlayed).valueOf()
+              );
+            });
+
+            const character = charactersData[keys[0]];
+
+            player.emblemPath = character.emblemPath;
+
+            console.log(character);
+          }
 
           const characterEquipmentData = res.Response.characterEquipment.data;
           if (characterEquipmentData) {
@@ -473,6 +492,8 @@ export type DestinyPlayer = {
   name: string;
   lastImport?: Date;
   status: 'loading' | 'ready' | 'erred';
+  emblemPath?: string;
+  emblemBackgroundPath?: string;
   suspectNonEquippedDisabled: boolean;
   suspectProgressionDisabled: boolean;
   exotics: {

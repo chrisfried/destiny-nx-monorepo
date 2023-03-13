@@ -1,5 +1,16 @@
-.mat-card-actions {
+.mat-mdc-card {
+  height: 100%;
+}
+.mat-mdc-card-content {
+  flex: 1;
+}
+.mat-mdc-card-actions {
   white-space: nowrap;
+  display: flex;
+
+  .spacer {
+    flex: 1;
+  }
 }
 .mat-mdc-chip {
   white-space: nowrap;
@@ -32,5 +43,5 @@
   }
 }
 mat-spinner {
-  margin: 1em auto;
+  margin: auto;
 }

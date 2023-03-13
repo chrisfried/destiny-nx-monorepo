@@ -1,5 +1,5 @@
 .main-content {
-  max-width: 750px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 1em;
   gap: 2em;
@@ -75,6 +75,10 @@ ol li {
   }
 }
 
+.mat-mdc-card-content {
+  flex: 1;
+}
+
 .code-block {
   background-color: #2f3136;
   border: solid 1px #202225;
@@ -88,5 +92,5 @@ form {
 }
 
 mat-spinner {
-  margin: 1em auto;
+  margin: auto;
 }

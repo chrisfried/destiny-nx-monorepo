@@ -1,9 +1,21 @@
-<mat-card class="player-card">
+<mat-card class="player-card" *ngIf="player.status === 'loading'">
+  <mat-spinner></mat-spinner>
+</mat-card>
+<mat-card class="player-card" *ngIf="player.status !== 'loading'">
   <mat-card-header>
+    <img
+      *ngIf="player.emblemPath"
+      mat-card-avatar
+      [src]="'https://www.bungie.net' + player.emblemPath"
+      alt="emblem"
+    />
     <mat-card-title>
       {{ player.name }}
     </mat-card-title>
-    <mat-card-subtitle
+  </mat-card-header>
+  <mat-card-content>
+    <span *ngIf="player.status === 'erred'">Error loading Guardian</span>
+    <span
       *ngIf="
         player.status === 'ready' &&
         player.suspectNonEquippedDisabled &&
@@ -11,8 +23,8 @@
       "
     >
       Vault inaccessible. Enable "Show my non-equipped Inventory" on Bungie.net
-    </mat-card-subtitle>
-    <mat-card-subtitle
+    </span>
+    <span
       *ngIf="
         player.status === 'ready' &&
         player.suspectProgressionDisabled &&
@@ -20,8 +32,8 @@
       "
     >
       Collections inaccessible. Enable "Show my progression" on Bungie.net
-    </mat-card-subtitle>
-    <mat-card-subtitle
+    </span>
+    <span
       *ngIf="
         player.status === 'ready' &&
         player.suspectProgressionDisabled &&
@@ -30,40 +42,20 @@
     >
       Vault and Collections inaccessible. Enable "Show my non-equipped
       Inventory" and "Show my progression" on Bungie.net
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content *ngIf="player.status === 'loading'">
-    <mat-spinner></mat-spinner>
+    </span>
   </mat-card-content>
-  <mat-card-content *ngIf="player.status === 'erred'">
-    Error loading Guardian
-  </mat-card-content>
-  <mat-card-content *ngIf="player.status === 'ready'">
-    <mat-chip-set>
-      <mat-chip class="weapons">
-        {{ getWeaponCount() }}
-        Weapons
-      </mat-chip>
+
+  <mat-card-actions>
+    <mat-chip-set *ngIf="player.status === 'ready'">
       <mat-chip class="non-exotics">
-        {{ getNonExoticCount() }} Non-Exotics
+        {{ getNonExoticCount() }}
       </mat-chip>
-      <mat-chip class="non-exotics">
-        {{ getPullableNonExoticCount() }} Collection Non-Exotics
-      </mat-chip>
-      <!-- <mat-chip class="archetypes">
-      {{ getArchetypeCount() }}
-      Archetypes
-    </mat-chip>
-    <mat-chip class="types"> {{ getTypeCount() }} Types </mat-chip> -->
-      <mat-chip class="exotics"> {{ getExoticCount() }} Exotics </mat-chip>
-      <mat-chip class="exotics">
-        {{ getPullableExoticCount() }} Collection Exotics
+      <mat-chip *ngIf="exotics !== 'exclude'" class="exotics">
+        {{ getExoticCount() }}
       </mat-chip>
     </mat-chip-set>
-  </mat-card-content>
-  <mat-card-actions>
+    <div class="spacer"></div>
     <button
-      [disabled]="player.status === 'loading'"
       (click)="refreshPlayer()"
       mat-icon-button
       aria-label="Refresh Player"

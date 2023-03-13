@@ -184,52 +184,98 @@ export class AppComponent {
   }
 
   getWeaponCount(): number {
-    let count = 0;
-    const exoticKeys = Object.keys(this.intersection.exotics);
-    const nonExoticKeys = Object.keys(this.intersection.nonExotics);
-    exoticKeys.forEach((key) => {
-      count += this.intersection.exotics[Number(key)].size;
+    let countSet = new Set();
+    this.manifestService.slotHashSet.forEach((slotHash) => {
+      if (this.exotics !== 'exclude') {
+        if (this.intersection.exotics[slotHash]) {
+          countSet = new Set([
+            ...countSet,
+            ...this.intersection.exotics[slotHash],
+          ]);
+        }
+        if (
+          this.collectionExotics &&
+          this.intersection.pullableExotics[slotHash]
+        ) {
+          this.intersection.pullableExotics[slotHash].forEach(
+            (collectibleHash) => {
+              const collectible =
+                this.manifestService.defs.Collectible?.get(collectibleHash);
+              countSet.add(collectible?.itemHash);
+            }
+          );
+        }
+      }
+      if (this.intersection.nonExotics[slotHash]) {
+        countSet = new Set([
+          ...countSet,
+          ...this.intersection.nonExotics[slotHash],
+        ]);
+      }
+      if (
+        this.collectionNonExotics &&
+        this.intersection.pullableNonExotics[slotHash]
+      ) {
+        this.intersection.pullableNonExotics[slotHash].forEach(
+          (collectibleHash) => {
+            const collectible =
+              this.manifestService.defs.Collectible?.get(collectibleHash);
+            countSet.add(collectible?.itemHash);
+          }
+        );
+      }
     });
-    nonExoticKeys.forEach((key) => {
-      count += this.intersection.nonExotics[Number(key)].size;
-    });
-    return count;
+    return countSet.size;
   }
 
   getExoticCount(): number {
-    let count = 0;
-    const slotHashes = Object.keys(this.intersection.exotics);
-    slotHashes.forEach((slotHash) => {
-      count += this.intersection.exotics[Number(slotHash)].size;
+    let countSet = new Set();
+    this.manifestService.slotHashSet.forEach((slotHash) => {
+      if (this.intersection.exotics[slotHash]) {
+        countSet = new Set([
+          ...countSet,
+          ...this.intersection.exotics[slotHash],
+        ]);
+      }
+      if (
+        this.collectionExotics &&
+        this.intersection.pullableExotics[slotHash]
+      ) {
+        this.intersection.pullableExotics[slotHash].forEach(
+          (collectibleHash) => {
+            const collectible =
+              this.manifestService.defs.Collectible?.get(collectibleHash);
+            countSet.add(collectible?.itemHash);
+          }
+        );
+      }
     });
-    return count;
+    return countSet.size;
   }
 
   getNonExoticCount(): number {
-    let count = 0;
-    const slotHashes = Object.keys(this.intersection.nonExotics);
-    slotHashes.forEach((slotHash) => {
-      count += this.intersection.nonExotics[Number(slotHash)].size;
+    let countSet = new Set();
+    this.manifestService.slotHashSet.forEach((slotHash) => {
+      if (this.intersection.nonExotics[slotHash]) {
+        countSet = new Set([
+          ...countSet,
+          ...this.intersection.nonExotics[slotHash],
+        ]);
+      }
+      if (
+        this.collectionNonExotics &&
+        this.intersection.pullableNonExotics[slotHash]
+      ) {
+        this.intersection.pullableNonExotics[slotHash].forEach(
+          (collectibleHash) => {
+            const collectible =
+              this.manifestService.defs.Collectible?.get(collectibleHash);
+            countSet.add(collectible?.itemHash);
+          }
+        );
+      }
     });
-    return count;
-  }
-
-  getPullableExoticCount(): number {
-    let count = 0;
-    const slotHashes = Object.keys(this.intersection.pullableExotics);
-    slotHashes.forEach((slotHash) => {
-      count += this.intersection.pullableExotics[Number(slotHash)].size;
-    });
-    return count;
-  }
-
-  getPullableNonExoticCount(): number {
-    let count = 0;
-    const slotHashes = Object.keys(this.intersection.pullableNonExotics);
-    slotHashes.forEach((slotHash) => {
-      count += this.intersection.pullableNonExotics[Number(slotHash)].size;
-    });
-    return count;
+    return countSet.size;
   }
 
   // getArchetypeCount(): number {

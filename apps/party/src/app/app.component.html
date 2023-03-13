@@ -10,36 +10,39 @@
     </div>
   </div>
 
-  <div class="section" *ngIf="manifestState === 'loading'">
-    <mat-spinner></mat-spinner>
-  </div>
+  <mat-spinner *ngIf="manifestState === 'loading'"></mat-spinner>
 
   <div class="section" *ngIf="manifestState === 'erred'">
     Error loading Destiny Manifest
   </div>
 
-  <div class="section" *ngIf="manifestState === 'ready'">
-    <mat-card>
+  <mat-card class="section" *ngIf="manifestState === 'ready'">
+    <mat-card-header>
       <mat-card-title>SRL²</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
       <div class="code-block">
         <code>{{
           searchText || 'Add Guardians, select options, then click the button'
         }}</code>
       </div>
-      <div *ngIf="requiresPull">Some items may be in Collections</div>
+    </mat-card-content>
 
-      <mat-card-actions>
-        <button
-          [disabled]="playerService.combinedSetsLoading"
-          color="primary"
-          (click)="randomize()"
-          mat-raised-button
-        >
-          Randomize & Copy to Clipboard
-        </button>
-      </mat-card-actions>
-    </mat-card>
-  </div>
+    <mat-card-actions>
+      <button
+        [disabled]="playerService.combinedSetsLoading"
+        color="primary"
+        (click)="randomize()"
+        mat-raised-button
+      >
+        Randomize & Copy to Clipboard
+      </button>
+    </mat-card-actions>
+
+    <mat-card-footer *ngIf="requiresPull">
+      Some items may be in Collections
+    </mat-card-footer>
+  </mat-card>
 
   <div class="section" *ngIf="manifestState === 'ready'">
     <h2>Guardians</h2>
@@ -60,39 +63,29 @@
         *ngFor="let player of players; index as i"
         [player]="player"
         [index]="i"
+        [exotics]="exotics"
+        [collectionExotics]="collectionExotics"
+        [collectionNonExotics]="collectionNonExotics"
       ></destiny-player>
-      <mat-card>
+
+      <mat-card *ngIf="playerService.combinedSetsLoading">
+        <mat-spinner></mat-spinner>
+      </mat-card>
+      <mat-card *ngIf="!playerService.combinedSetsLoading">
         <mat-card-header>
           <mat-card-title>Commonality</mat-card-title>
         </mat-card-header>
-        <mat-card-content *ngIf="playerService.combinedSetsLoading">
-          <mat-spinner></mat-spinner>
-        </mat-card-content>
-        <mat-card-content *ngIf="!playerService.combinedSetsLoading">
+        <mat-card-content></mat-card-content>
+        <mat-card-actions>
           <mat-chip-set>
-            <mat-chip class="weapons">
-              {{ getWeaponCount() }}
-              Weapons
-            </mat-chip>
             <mat-chip class="non-exotics">
               {{ getNonExoticCount() }} Non-Exotics
             </mat-chip>
-            <mat-chip class="non-exotics">
-              {{ getPullableNonExoticCount() }} Collection Non-Exotics
-            </mat-chip>
-            <!-- <mat-chip class="archetypes">
-            {{ getArchetypeCount() }}
-            Archetypes
-          </mat-chip>
-          <mat-chip class="types"> {{ getTypeCount() }} Types </mat-chip> -->
-            <mat-chip class="exotics">
+            <mat-chip *ngIf="exotics !== 'exclude'" class="exotics">
               {{ getExoticCount() }} Exotics
             </mat-chip>
-            <mat-chip class="exotics">
-              {{ getPullableExoticCount() }} Collection Exotics
-            </mat-chip>
           </mat-chip-set>
-        </mat-card-content>
+        </mat-card-actions>
       </mat-card>
     </div>
   </div>
@@ -102,73 +95,64 @@
 
     <div class="option-cards">
       <mat-card>
-        <mat-card-title>Exotics</mat-card-title>
-        <mat-radio-group aria-label="Exotics" [(ngModel)]="exotics">
-          <mat-radio-button value="exclude">Never</mat-radio-button>
-          <mat-radio-button value="include" [checked]="true"
-            >Sometimes</mat-radio-button
-          >
-          <mat-radio-button value="required">Always</mat-radio-button>
-        </mat-radio-group>
+        <mat-card-header>
+          <mat-card-title>Exotics</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <mat-radio-group aria-label="Exotics" [(ngModel)]="exotics">
+            <mat-radio-button value="exclude">Never</mat-radio-button>
+            <mat-radio-button value="include" [checked]="true"
+              >Sometimes</mat-radio-button
+            >
+            <mat-radio-button value="required">Always</mat-radio-button>
+          </mat-radio-group>
+        </mat-card-content>
       </mat-card>
 
       <mat-card>
-        <mat-card-title>Collections</mat-card-title>
-        <mat-checkbox [(ngModel)]="collectionExotics">Exotics</mat-checkbox>
-        <mat-checkbox [(ngModel)]="collectionNonExotics"
-          >Non-Exotics</mat-checkbox
+        <mat-card-header
+          ><mat-card-title>Collections</mat-card-title></mat-card-header
         >
+        <mat-card-content>
+          <mat-checkbox [(ngModel)]="collectionNonExotics"
+            >Non-Exotics</mat-checkbox
+          ><br />
+          <mat-checkbox
+            *ngIf="exotics !== 'exclude'"
+            [(ngModel)]="collectionExotics"
+            >Exotics</mat-checkbox
+          >
+        </mat-card-content>
       </mat-card>
 
-      <!-- <mat-card>
-        <mat-card-title>Randomize</mat-card-title>
-        <mat-radio-group
-          aria-label="Randomization"
-          [(ngModel)]="randomizationType"
-        >
-          <mat-radio-button value="weaponSet" [checked]="true"
-            >Weapons</mat-radio-button
-          >
-          <mat-radio-button value="archetypeSet">Archetypes</mat-radio-button>
-          <mat-radio-button value="typeSet">Types</mat-radio-button>
-        </mat-radio-group>
-      </mat-card> -->
-
-      <!-- <mat-card>
-        <mat-card-title>Minimum Power</mat-card-title>
-        <mat-card-subtitle
-          >Limit pool for Power Level enabled activities</mat-card-subtitle
-        >
-        <mat-form-field color="accent">
-          <mat-label>Minimum Power</mat-label>
-          <input matInput (input)="changeMinPower($event)" />
-        </mat-form-field>
-      </mat-card> -->
-
       <mat-card>
-        <mat-card-title>Discord Integration</mat-card-title>
-        <mat-card-subtitle
-          >Automatically send search text to a Discord
-          channel</mat-card-subtitle
-        >
-        <mat-form-field color="accent">
-          <mat-label>Discord Webhook URL</mat-label>
-          <input
-            title="Discord Webhook URL"
-            matInput
-            [(ngModel)]="discordWebhookUrl"
-            type="password"
-          />
-        </mat-form-field>
-        <mat-form-field color="accent">
-          <mat-label>Thread ID (optional)</mat-label>
-          <input
-            title="Thread ID"
-            matInput
-            [(ngModel)]="discordThreadId"
-            type="password"
-          />
-        </mat-form-field>
+        <mat-card-header>
+          <mat-card-title>Discord Integration</mat-card-title>
+          <mat-card-subtitle
+            >Automatically send search text to a Discord
+            channel</mat-card-subtitle
+          >
+        </mat-card-header>
+        <mat-card-content>
+          <mat-form-field color="accent">
+            <mat-label>Discord Webhook URL</mat-label>
+            <input
+              title="Discord Webhook URL"
+              matInput
+              [(ngModel)]="discordWebhookUrl"
+              type="password"
+            />
+          </mat-form-field>
+          <mat-form-field color="accent">
+            <mat-label>Thread ID (optional)</mat-label>
+            <input
+              title="Thread ID"
+              matInput
+              [(ngModel)]="discordThreadId"
+              type="password"
+            />
+          </mat-form-field>
+        </mat-card-content>
       </mat-card>
     </div>
   </div>
@@ -176,9 +160,6 @@
   <mat-expansion-panel hideToggle>
     <mat-expansion-panel-header>
       <mat-panel-title> Help </mat-panel-title>
-      <!-- <mat-panel-description>
-        A very in-depth and helpful tutorial
-      </mat-panel-description> -->
     </mat-expansion-panel-header>
 
     Make sure all Guardians have the following two options enabled in their
@@ -193,75 +174,5 @@
       <li>Show my progression</li>
     </ul>
     It may take a few minutes for Privacy Settings changes to be applied.
-
-    <!-- <ol>
-      <li>
-        Instruct all players to export their Weapons spreadsheet from DIM's
-        Settings page.
-        <strong>Important:</strong> All players must have DIM set to the same
-        language for this to work.
-        <img
-          alt="screenshot showing the location of the weapons export button in DIM"
-          src="./assets/dim-export.png"
-        />
-      </li>
-      <li>Collect the destinyWeapons.csv files your players just exported.</li>
-      <li>Import a CSV file for each player at the top of this page.</li>
-      <li>
-        Choose your randomization type:
-        <ul>
-          <li>
-            <strong>Weapons</strong> will choose a random weapon that all
-            players possess for each weapon slot (e.g. Chroma Rush)
-          </li>
-          <li>
-            <strong>Archetypes</strong> will choose a random weapon archetype
-            that all players possess for each weapon slot (e.g. Kinetic
-            Precision Frame Auto Rifles)
-          </li>
-          <li>
-            <strong>Types</strong> will choose a random weapon type that all
-            players possess for each weapon slot (e.g. Kinetic Auto Rifles)
-          </li>
-        </ul>
-      </li>
-      <li>
-        Enable or disable exotics. This works slightly differently for each
-        randomization type (and is probably buggy).
-      </li>
-      <li>
-        Click the "Randomize & Copy to Clipboard" button, then paste into your
-        group chat of choice.
-      </li>
-      <li>
-        Have all players copy-paste the string you just sent into their DIM
-        search bar.
-      </li>
-      <li>
-        At this point, you <em>can</em> let your players choose from the search
-        results, but my preference is to request they use the "Randomize from
-        Search" button.
-        <img
-          alt="screenshot showing the location of the randomize from search button in DIM"
-          src="./assets/randomize-from-search.png"
-        />
-      </li>
-      <li>
-        Pro tip: Use the Armor Mod Wizard on
-        <a
-          rel="noopener"
-          href="https://www.d2checklist.com/gear/weapons"
-          target="_blank"
-          >D2 Checklist</a
-        >
-        to quickly equip relevant mods. Armor Mod Wizard video tutorial
-        <a
-          rel="noopener"
-          href="https://www.youtube.com/watch?v=8LblnLMz8_4"
-          target="_blank"
-          >here.</a
-        >
-      </li>
-    </ol> -->
   </mat-expansion-panel>
 </div>

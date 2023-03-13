@@ -6,6 +6,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { ManifestService } from '../manifest/manifest.service';
 import { DestinyPlayer, PlayerService } from './player.service';
 @Component({
   selector: 'destiny-player',
@@ -25,8 +26,14 @@ import { DestinyPlayer, PlayerService } from './player.service';
 export class PlayerComponent {
   @Input() player!: DestinyPlayer;
   @Input() index = 0;
+  @Input() exotics!: 'exclude' | 'include' | 'required';
+  @Input() collectionExotics = false;
+  @Input() collectionNonExotics = false;
 
-  constructor(private playerService: PlayerService) {}
+  constructor(
+    private playerService: PlayerService,
+    private manifestService: ManifestService
+  ) {}
 
   refreshPlayer() {
     this.playerService.fetchWeapons(this.player);
@@ -37,52 +44,72 @@ export class PlayerComponent {
   }
 
   getWeaponCount(): number {
-    let count = 0;
-    const exoticKeys = Object.keys(this.player.exotics);
-    const nonExoticKeys = Object.keys(this.player.nonExotics);
-    exoticKeys.forEach((key) => {
-      count += this.player.exotics[Number(key)].size;
+    let countSet = new Set();
+    this.manifestService.slotHashSet.forEach((slotHash) => {
+      if (this.exotics !== 'exclude') {
+        if (this.player.exotics[slotHash]) {
+          countSet = new Set([...countSet, ...this.player.exotics[slotHash]]);
+        }
+        if (this.collectionExotics && this.player.pullableExotics[slotHash]) {
+          this.player.pullableExotics[slotHash].forEach((collectibleHash) => {
+            const collectible =
+              this.manifestService.defs.Collectible?.get(collectibleHash);
+            countSet.add(collectible?.itemHash);
+          });
+        }
+      }
+      if (this.player.nonExotics[slotHash]) {
+        countSet = new Set([...countSet, ...this.player.nonExotics[slotHash]]);
+      }
+      if (
+        this.collectionNonExotics &&
+        this.player.pullableNonExotics[slotHash]
+      ) {
+        this.player.pullableNonExotics[slotHash].forEach((collectibleHash) => {
+          const collectible =
+            this.manifestService.defs.Collectible?.get(collectibleHash);
+          countSet.add(collectible?.itemHash);
+        });
+      }
     });
-    nonExoticKeys.forEach((key) => {
-      count += this.player.nonExotics[Number(key)].size;
-    });
-    return count;
+    return countSet.size;
   }
 
   getExoticCount(): number {
-    let count = 0;
-    const slotHashes = Object.keys(this.player.exotics);
-    slotHashes.forEach((slotHash) => {
-      count += this.player.exotics[Number(slotHash)].size;
+    let countSet = new Set();
+    this.manifestService.slotHashSet.forEach((slotHash) => {
+      if (this.player.exotics[slotHash]) {
+        countSet = new Set([...countSet, ...this.player.exotics[slotHash]]);
+      }
+      if (this.collectionExotics && this.player.pullableExotics[slotHash]) {
+        this.player.pullableExotics[slotHash].forEach((collectibleHash) => {
+          const collectible =
+            this.manifestService.defs.Collectible?.get(collectibleHash);
+          countSet.add(collectible?.itemHash);
+        });
+      }
     });
-    return count;
+    return countSet.size;
   }
 
   getNonExoticCount(): number {
-    let count = 0;
-    const slotHashes = Object.keys(this.player.nonExotics);
-    slotHashes.forEach((slotHash) => {
-      count += this.player.nonExotics[Number(slotHash)].size;
+    let countSet = new Set();
+    this.manifestService.slotHashSet.forEach((slotHash) => {
+      if (this.player.nonExotics[slotHash]) {
+        countSet = new Set([...countSet, ...this.player.nonExotics[slotHash]]);
+      }
+      if (
+        this.collectionNonExotics &&
+        this.player.pullableNonExotics[slotHash]
+      ) {
+        this.player.pullableNonExotics[slotHash].forEach((collectibleHash) => {
+          const collectible =
+            this.manifestService.defs.Collectible?.get(collectibleHash);
+          countSet.add(collectible?.itemHash);
+        });
+      }
     });
-    return count;
-  }
-
-  getPullableExoticCount(): number {
-    let count = 0;
-    const slotHashes = Object.keys(this.player.pullableExotics);
-    slotHashes.forEach((slotHash) => {
-      count += this.player.pullableExotics[Number(slotHash)].size;
-    });
-    return count;
-  }
-
-  getPullableNonExoticCount(): number {
-    let count = 0;
-    const slotHashes = Object.keys(this.player.pullableNonExotics);
-    slotHashes.forEach((slotHash) => {
-      count += this.player.pullableNonExotics[Number(slotHash)].size;
-    });
-    return count;
+    return countSet.size;
   }
 
   // getArchetypeCount(): number {
