@@ -10,10 +10,30 @@
       alt="emblem"
     />
     <mat-card-title>
-      {{ player.name }}
+      {{ player.name }}<span class="nameCode">#{{ player.nameCode }}</span>
     </mat-card-title>
   </mat-card-header>
-  <mat-card-content>
+  <mat-card-content *ngIf="player.status === 'chooseMembership'">
+    <mat-action-list>
+      <mat-list-item
+        *ngFor="let membership of player.possibleMemberships"
+        (click)="selectMembership(membership)"
+      >
+        <img
+          matListItemAvatar
+          [src]="'http://www.bungie.net' + membership.iconPath"
+          alt="..."
+        />
+        <h3 matListItemTitle>
+          {{ membership.bungieGlobalDisplayName
+          }}<span class="nameCode"
+            >#{{ membership.bungieGlobalDisplayNameCode }}</span
+          >
+        </h3>
+      </mat-list-item>
+    </mat-action-list>
+  </mat-card-content>
+  <mat-card-content *ngIf="player.status !== 'chooseMembership'">
     <span *ngIf="player.status === 'erred'">Error loading Guardian</span>
     <span
       *ngIf="

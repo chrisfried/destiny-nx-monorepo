@@ -180,12 +180,6 @@ export class ManifestService {
               }
             }
           }
-          console.log('Slot Hash Set', this.slotHashSet);
-          console.log('Exotic Lookup', this.exoticLookup);
-          console.log('Non-Exotic Lookup', this.nonExoticLookup);
-
-          console.log('Pullable Exotics', this.pullableExotics);
-          console.log('Pullable Non-Exotics', this.pullableNonExotics);
           this.state$.next('ready');
         }),
         catchError((e, caught) => {

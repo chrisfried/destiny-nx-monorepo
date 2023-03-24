@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { getCollectibleDef } from '@d2api/manifest';
+import { UserInfoCard } from 'bungie-api-ts/user/interfaces';
 import { ManifestService } from '../manifest/manifest.service';
 import { DestinyPlayer, PlayerService } from './player.service';
 @Component({
@@ -37,11 +38,23 @@ export class PlayerComponent {
   ) {}
 
   refreshPlayer() {
-    this.playerService.fetchWeapons(this.player);
+    if (this.player.status === 'ready') {
+      this.playerService.fetchWeapons(this.player);
+    } else {
+      this.playerService.findDestinyMembership(this.player);
+    }
   }
 
   removePlayer() {
     this.playerService.removePlayer(this.index);
+  }
+
+  selectMembership(membership: UserInfoCard) {
+    this.player.name = membership.bungieGlobalDisplayName;
+    this.player.nameCode = membership.bungieGlobalDisplayNameCode;
+    this.player.membershipType = membership.membershipType;
+    this.player.membershipId = membership.membershipId;
+    this.playerService.fetchWeapons(this.player);
   }
 
   getWeaponCount(): number {

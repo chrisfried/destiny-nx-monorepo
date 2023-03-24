@@ -1,13 +1,14 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { getCollectibleDef } from '@d2api/manifest';
-import { BungieMembershipType } from 'bungie-api-ts/content';
+import { BungieMembershipType } from 'bungie-api-ts/common';
 import {
   DestinyCollectibleState,
   DestinyComponentType,
   getProfile,
   searchDestinyPlayerByBungieName,
 } from 'bungie-api-ts/destiny2';
+import { searchByGlobalNamePost } from 'bungie-api-ts/user';
+import { UserInfoCard } from 'bungie-api-ts/user/interfaces';
 import {
   BehaviorSubject,
   catchError,
@@ -15,7 +16,6 @@ import {
   from,
   lastValueFrom,
   map,
-  switchMap,
 } from 'rxjs';
 import { ManifestService } from '../manifest/manifest.service';
 
@@ -74,6 +74,8 @@ export class PlayerService {
     const player: DestinyPlayer = {
       name: name,
       status: 'loading',
+      membershipId: '',
+      membershipType: BungieMembershipType.None,
       suspectNonEquippedDisabled: false,
       suspectProgressionDisabled: false,
       exotics: {},
@@ -84,12 +86,112 @@ export class PlayerService {
       pullableNonExotics: {},
     };
     this.players.push(player);
-    this.fetchWeapons(player);
+    this.findDestinyMembership(player);
   }
 
   removePlayer(index: number) {
     this.players.splice(index, 1);
     this.updateCombinedSets();
+  }
+
+  findDestinyMembership(player: DestinyPlayer) {
+    player.status = 'loading';
+    player.possibleMemberships = [];
+    if (player.name.indexOf('#') > -1) {
+      from(
+        searchDestinyPlayerByBungieName(
+          (config) =>
+            lastValueFrom(
+              this.http.request(config.method, config.url, {
+                params: config.params,
+                body: config.body,
+              })
+            ),
+          {
+            membershipType: BungieMembershipType.All,
+          },
+          {
+            displayName: player.name.split('#')[0],
+            displayNameCode: Number(player.name.split('#')[1]),
+          }
+        )
+      ).subscribe({
+        next: (res) => {
+          const memberships = res.Response.filter(
+            (p) => p.applicableMembershipTypes.length > 0
+          );
+
+          this.handleMemberships(player, memberships);
+        },
+        error: (err) => {
+          player.status = 'erred';
+          this.updateCombinedSets();
+        },
+      });
+    } else {
+      from(
+        searchByGlobalNamePost(
+          (config) =>
+            lastValueFrom(
+              this.http.request(config.method, config.url, {
+                params: config.params,
+                body: config.body,
+              })
+            ),
+          {
+            page: 0,
+          },
+          {
+            displayNamePrefix: player.name,
+          }
+        )
+      ).subscribe({
+        next: (res) => {
+          if (res.Response.searchResults.length < 1) {
+            player.status = 'erred';
+            this.updateCombinedSets();
+          } else if (res.Response.searchResults.length > 1) {
+            const memberships = res.Response.searchResults.flatMap((result) =>
+              result.destinyMemberships.filter(
+                (mem) => mem.applicableMembershipTypes.length > 0
+              )
+            );
+            this.handleMemberships(player, memberships);
+          } else {
+            const memberships =
+              res.Response.searchResults[0].destinyMemberships.filter(
+                (p) => p.applicableMembershipTypes.length > 0
+              );
+
+            this.handleMemberships(player, memberships);
+          }
+        },
+        error: (err) => {
+          player.status = 'erred';
+          this.updateCombinedSets();
+        },
+      });
+    }
+  }
+
+  handleMemberships(player: DestinyPlayer, memberships: UserInfoCard[]) {
+    if (memberships.length < 1) {
+      player.status = 'erred';
+      this.updateCombinedSets();
+    } else if (memberships.length > 1) {
+      memberships.forEach((mem) => player.possibleMemberships?.push(mem));
+      player.status = 'chooseMembership';
+      this.updateCombinedSets();
+    } else {
+      const playerRes = memberships[0];
+
+      player.name = playerRes.bungieGlobalDisplayName;
+      player.nameCode = playerRes.bungieGlobalDisplayNameCode;
+      player.membershipId = playerRes.membershipId;
+      player.membershipType = playerRes.membershipType;
+
+      this.fetchWeapons(player);
+    }
   }
 
   fetchWeapons(player: DestinyPlayer) {
@@ -105,7 +207,7 @@ export class PlayerService {
     player.pullableNonExotics = {};
 
     from(
-      searchDestinyPlayerByBungieName(
+      getProfile(
         (config) =>
           lastValueFrom(
             this.http.request(config.method, config.url, {
@@ -114,47 +216,21 @@ export class PlayerService {
             })
           ),
         {
-          membershipType: BungieMembershipType.All,
-        },
-        {
-          displayName: player.name.split('#')[0],
-          displayNameCode: Number(player.name.split('#')[1]),
+          destinyMembershipId: player.membershipId,
+          membershipType: player.membershipType,
+          components: [
+            DestinyComponentType.CharacterEquipment,
+            DestinyComponentType.CharacterInventories,
+            DestinyComponentType.ProfileInventories,
+            DestinyComponentType.Collectibles,
+            DestinyComponentType.Characters,
+            DestinyComponentType.ItemInstances,
+          ],
         }
       )
     )
       .pipe(
-        switchMap((res) => {
-          const playerRes = res.Response.filter(
-            (p) => p.applicableMembershipTypes.length > 0
-          )[0];
-          console.log(playerRes);
-
-          player.name = `${playerRes.bungieGlobalDisplayName}#${playerRes.bungieGlobalDisplayNameCode}`;
-
-          return getProfile(
-            (config) =>
-              lastValueFrom(
-                this.http.request(config.method, config.url, {
-                  params: config.params,
-                  body: config.body,
-                })
-              ),
-            {
-              destinyMembershipId: playerRes.membershipId,
-              membershipType: playerRes.membershipType,
-              components: [
-                DestinyComponentType.CharacterEquipment,
-                DestinyComponentType.CharacterInventories,
-                DestinyComponentType.ProfileInventories,
-                DestinyComponentType.Collectibles,
-                DestinyComponentType.Characters,
-              ],
-            }
-          );
-        }),
         map((res) => {
-          console.log(res);
-
           const charactersData = res.Response.characters.data;
           if (charactersData) {
             const keys = Object.keys(charactersData);
@@ -169,8 +245,6 @@ export class PlayerService {
             const character = charactersData[keys[0]];
 
             player.emblemPath = character.emblemPath;
-
-            console.log(character);
           }
 
           const characterEquipmentData = res.Response.characterEquipment.data;
@@ -239,7 +313,6 @@ export class PlayerService {
                 collectible.state ===
                   DestinyCollectibleState.InventorySpaceUnavailable
               ) {
-                console.log(collectible.state);
                 this.sortCollectible(player, Number(collectibleHash));
               }
             });
@@ -248,7 +321,6 @@ export class PlayerService {
           }
 
           player.status = 'ready';
-          console.log(player);
           this.updateCombinedSets();
         }),
         catchError((err, caught) => {
@@ -282,10 +354,6 @@ export class PlayerService {
         player.pullableExotics[slotHash]
           ? player.pullableExotics[slotHash].add(collectibleHash)
           : (player.pullableExotics[slotHash] = new Set([collectibleHash]));
-        console.log(
-          collectibleHash,
-          getCollectibleDef(collectibleHash)?.displayProperties.name
-        );
       }
       if (this.manifest.pullableNonExotics[slotHash].has(collectibleHash)) {
         player.pullableNonExotics[slotHash]
@@ -296,13 +364,9 @@ export class PlayerService {
   }
 
   updateCombinedSets() {
-    console.log('updating combined');
-    console.log(this.players.filter((p) => p.status === 'loading'));
     const loading =
       this.players.filter((p) => p.status === 'loading').length > 0;
     if (loading) {
-      console.log(this.players.map((p) => p.status));
-      console.log('still loading');
       return;
     }
 
@@ -394,15 +458,17 @@ export class PlayerService {
       });
 
     this.combinedSetsLoading = false;
-
-    console.log(this.combinedSets);
   }
 }
 
 export type DestinyPlayer = {
   name: string;
+  nameCode?: number;
+  possibleMemberships?: UserInfoCard[];
+  membershipId: string;
+  membershipType: BungieMembershipType;
   lastImport?: Date;
-  status: 'loading' | 'ready' | 'erred';
+  status: 'loading' | 'chooseMembership' | 'ready' | 'erred';
   emblemPath?: string;
   emblemBackgroundPath?: string;
   suspectNonEquippedDisabled: boolean;

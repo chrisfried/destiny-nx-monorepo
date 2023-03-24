@@ -177,8 +177,6 @@ export class AppComponent {
         })
         .subscribe();
     }
-
-    console.log(items);
   }
 
   getWeaponCount(): number {
