@@ -9,8 +9,8 @@
     "start scrubland": "nx serve scrubland",
     "build": "nx build",
     "test": "nx test",
-    "predeploy:party": "nx build party --prod --baseHref=/",
-    "deploy:party": "npm run predeploy:party && gh-pages -d dist/apps/party -o party"
+    "predeploy:party": "nx build party --prod",
+    "deploy:party": "npm run predeploy:party && echo d2srl.club > ./dist/apps/party/CNAME && gh-pages -d dist/apps/party -o party"
   },
   "private": true,
   "dependencies": {
