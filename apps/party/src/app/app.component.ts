@@ -18,6 +18,10 @@ import { DestinyInventoryItemDefinition } from 'bungie-api-ts/destiny2';
 import { ManifestService } from './manifest/manifest.service';
 import { PlayerComponent } from './player/player.component';
 import { PlayerService } from './player/player.service';
+import {
+  WebringComponent,
+  WebringSheetComponent,
+} from './webring/webring.component';
 
 @Component({
   selector: 'destiny-root',
@@ -40,6 +44,8 @@ import { PlayerService } from './player/player.service';
     PlayerComponent,
     MatCheckboxModule,
     MatProgressSpinnerModule,
+    WebringComponent,
+    WebringSheetComponent,
   ],
 })
 export class AppComponent {
