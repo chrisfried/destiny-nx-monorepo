@@ -213,73 +213,30 @@ export class AppComponent {
   }
 
   updateCounts(): void {
-    this.weaponCount = this.getWeaponCount();
     this.exoticCount = this.getExoticCount();
     this.nonExoticCount = this.getNonExoticCount();
   }
 
-  getWeaponCount(): number {
-    console.log('what');
-    let countSet = new Set();
-    this.manifestService.slotHashSet.forEach((slotHash) => {
-      if (this.exotics !== 'exclude') {
-        if (this.intersection.exotics[slotHash]) {
-          countSet = new Set([
-            ...countSet,
-            ...this.intersection.exotics[slotHash],
-          ]);
-        }
-        if (
-          this.collectionExotics &&
-          this.intersection.pullableExotics[slotHash]
-        ) {
-          this.intersection.pullableExotics[slotHash].forEach(
-            (collectibleHash) => {
-              const collectible = getCollectibleDef(collectibleHash);
-              countSet.add(collectible?.itemHash);
-            }
-          );
-        }
-      }
-      if (this.intersection.nonExotics[slotHash]) {
-        countSet = new Set([
-          ...countSet,
-          ...this.intersection.nonExotics[slotHash],
-        ]);
-      }
-      if (
-        this.collectionNonExotics &&
-        this.intersection.pullableNonExotics[slotHash]
-      ) {
-        this.intersection.pullableNonExotics[slotHash].forEach(
-          (collectibleHash) => {
-            const collectible = getCollectibleDef(collectibleHash);
-            countSet.add(collectible?.itemHash);
-          }
-        );
-      }
-    });
-    return countSet.size;
-  }
-
   getExoticCount(): number {
-    console.log('what');
-    let countSet = new Set();
+    let countSet: Set<number> = new Set();
     this.manifestService.slotHashSet.forEach((slotHash) => {
-      if (this.intersection.exotics[slotHash]) {
+      if (this.exotics !== 'exclude' && this.intersection.exotics[slotHash]) {
         countSet = new Set([
           ...countSet,
           ...this.intersection.exotics[slotHash],
         ]);
       }
       if (
+        this.exotics !== 'exclude' &&
         this.collectionExotics &&
         this.intersection.pullableExotics[slotHash]
       ) {
         this.intersection.pullableExotics[slotHash].forEach(
           (collectibleHash) => {
             const collectible = getCollectibleDef(collectibleHash);
-            countSet.add(collectible?.itemHash);
+            if (collectible) {
+              countSet.add(collectible?.itemHash);
+            }
           }
         );
       }
@@ -288,7 +245,7 @@ export class AppComponent {
   }
 
   getNonExoticCount(): number {
-    let countSet = new Set();
+    let countSet: Set<number> = new Set();
     this.manifestService.slotHashSet.forEach((slotHash) => {
       if (this.intersection.nonExotics[slotHash]) {
         countSet = new Set([
@@ -303,7 +260,9 @@ export class AppComponent {
         this.intersection.pullableNonExotics[slotHash].forEach(
           (collectibleHash) => {
             const collectible = getCollectibleDef(collectibleHash);
-            countSet.add(collectible?.itemHash);
+            if (collectible) {
+              countSet.add(collectible?.itemHash);
+            }
           }
         );
       }

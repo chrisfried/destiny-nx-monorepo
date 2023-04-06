@@ -101,7 +101,11 @@
           <mat-card-title>Exotics</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <mat-radio-group aria-label="Exotics" [(ngModel)]="exotics">
+          <mat-radio-group
+            aria-label="Exotics"
+            [(ngModel)]="exotics"
+            (change)="updateCounts()"
+          >
             <mat-radio-button value="exclude">Never</mat-radio-button>
             <mat-radio-button value="include" [checked]="true"
               >Sometimes</mat-radio-button
@@ -116,12 +120,15 @@
           ><mat-card-title>Collections</mat-card-title></mat-card-header
         >
         <mat-card-content>
-          <mat-checkbox [(ngModel)]="collectionNonExotics"
+          <mat-checkbox
+            [(ngModel)]="collectionNonExotics"
+            (change)="updateCounts()"
             >Non-Exotics</mat-checkbox
           ><br />
           <mat-checkbox
             *ngIf="exotics !== 'exclude'"
             [(ngModel)]="collectionExotics"
+            (change)="updateCounts()"
             >Exotics</mat-checkbox
           >
         </mat-card-content>
