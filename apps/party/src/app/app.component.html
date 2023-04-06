@@ -32,7 +32,7 @@
 
     <mat-card-actions>
       <button
-        [disabled]="playerService.combinedSetsLoading"
+        [disabled]="playerService.combinedSetsLoading | async"
         color="primary"
         (click)="randomize()"
         mat-raised-button
@@ -70,21 +70,21 @@
         [collectionNonExotics]="collectionNonExotics"
       ></destiny-player>
 
-      <mat-card *ngIf="playerService.combinedSetsLoading">
+      <mat-card *ngIf="playerService.combinedSetsLoading | async">
         <mat-spinner></mat-spinner>
       </mat-card>
-      <mat-card *ngIf="!playerService.combinedSetsLoading">
+      <mat-card *ngIf="(playerService.combinedSetsLoading | async) === false">
         <mat-card-header>
           <mat-card-title>Commonality</mat-card-title>
         </mat-card-header>
-        <mat-card-content></mat-card-content>
+        <mat-card-content> </mat-card-content>
         <mat-card-actions>
           <mat-chip-set>
             <mat-chip class="non-exotics">
-              {{ getNonExoticCount() }} Non-Exotics
+              {{ nonExoticCount }} Non-Exotics
             </mat-chip>
             <mat-chip *ngIf="exotics !== 'exclude'" class="exotics">
-              {{ getExoticCount() }} Exotics
+              {{ exoticCount }} Exotics
             </mat-chip>
           </mat-chip-set>
         </mat-card-actions>

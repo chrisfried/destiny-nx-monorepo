@@ -32,6 +32,9 @@ export class ManifestService {
   nonExoticLookup: {
     [slotHash: number]: Set<number>;
   } = {};
+  nonExoticNameLookup: {
+    [name: string]: Set<number>;
+  } = {};
 
   pullableExotics: {
     [slotHash: number]: Set<number>;
@@ -159,6 +162,16 @@ export class ManifestService {
                       this.nonExoticLookup[slotHash]
                         ? this.nonExoticLookup[slotHash].add(item.hash)
                         : (this.nonExoticLookup[slotHash] = new Set([
+                            item.hash,
+                          ]));
+
+                      const splitName = item.displayProperties.name
+                        .split(' (')[0]
+                        .split('_v1')[0];
+
+                      this.nonExoticNameLookup[splitName]
+                        ? this.nonExoticNameLookup[splitName].add(item.hash)
+                        : (this.nonExoticNameLookup[splitName] = new Set([
                             item.hash,
                           ]));
 

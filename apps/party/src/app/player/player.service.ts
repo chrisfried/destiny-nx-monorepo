@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { getInventoryItemDef } from '@d2api/manifest-web';
 import { BungieMembershipType } from 'bungie-api-ts/common';
 import {
   DestinyCollectibleState,
@@ -65,12 +66,12 @@ export class PlayerService {
     '569799274',
   ]);
   minPower = new BehaviorSubject(0);
-  combinedSetsLoading = false;
+  combinedSetsLoading = new BehaviorSubject(false);
 
   constructor(private http: HttpClient, private manifest: ManifestService) {}
 
   addPlayer(name: string) {
-    this.combinedSetsLoading = true;
+    this.combinedSetsLoading.next(true);
     const player: DestinyPlayer = {
       name: name,
       status: 'loading',
@@ -124,6 +125,7 @@ export class PlayerService {
           this.handleMemberships(player, memberships);
         },
         error: (err) => {
+          console.error(err);
           player.status = 'erred';
           this.updateCombinedSets();
         },
@@ -167,6 +169,7 @@ export class PlayerService {
           }
         },
         error: (err) => {
+          console.error(err);
           player.status = 'erred';
           this.updateCombinedSets();
         },
@@ -195,7 +198,7 @@ export class PlayerService {
   }
 
   fetchWeapons(player: DestinyPlayer) {
-    this.combinedSetsLoading = true;
+    this.combinedSetsLoading.next(true);
     player.status = 'loading';
     player.suspectNonEquippedDisabled = false;
     player.suspectProgressionDisabled = false;
@@ -324,6 +327,7 @@ export class PlayerService {
           this.updateCombinedSets();
         }),
         catchError((err, caught) => {
+          console.error(err);
           player.status = 'erred';
           this.updateCombinedSets();
 
@@ -334,16 +338,28 @@ export class PlayerService {
   }
 
   sortItem(player: DestinyPlayer, itemHash: number) {
+    const item = getInventoryItemDef(itemHash);
+    const splitName = item?.displayProperties.name
+      .split(' (')[0]
+      .split('_v1')[0];
+
+    const hashes =
+      splitName && this.manifest.nonExoticNameLookup[splitName]
+        ? this.manifest.nonExoticNameLookup[splitName]
+        : new Set([itemHash]);
+
+    const firstHash = [...hashes][0];
+
     this.manifest.slotHashSet.forEach((slotHash) => {
-      if (this.manifest.exoticLookup[slotHash].has(itemHash)) {
+      if (this.manifest.exoticLookup[slotHash].has(firstHash)) {
         player.exotics[slotHash]
-          ? player.exotics[slotHash].add(itemHash)
-          : (player.exotics[slotHash] = new Set([itemHash]));
+          ? player.exotics[slotHash].add(firstHash)
+          : (player.exotics[slotHash] = new Set([firstHash]));
       }
-      if (this.manifest.nonExoticLookup[slotHash].has(itemHash)) {
+      if (this.manifest.nonExoticLookup[slotHash].has(firstHash)) {
         player.nonExotics[slotHash]
-          ? player.nonExotics[slotHash].add(itemHash)
-          : (player.nonExotics[slotHash] = new Set([itemHash]));
+          ? player.nonExotics[slotHash].add(firstHash)
+          : (player.nonExotics[slotHash] = new Set([firstHash]));
       }
     });
   }
@@ -457,7 +473,7 @@ export class PlayerService {
         });
       });
 
-    this.combinedSetsLoading = false;
+    this.combinedSetsLoading.next(false);
   }
 }
 

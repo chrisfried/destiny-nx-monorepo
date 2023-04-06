@@ -15,6 +15,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { getCollectibleDef, getInventoryItemDef } from '@d2api/manifest';
 import { DestinyInventoryItemDefinition } from 'bungie-api-ts/destiny2';
+import { distinctUntilChanged, tap } from 'rxjs';
 import { ManifestService } from './manifest/manifest.service';
 import { PlayerComponent } from './player/player.component';
 import { PlayerService } from './player/player.service';
@@ -62,6 +63,9 @@ export class AppComponent {
   collectionExotics = true;
   collectionNonExotics = false;
   requiresPull = false;
+  weaponCount = 0;
+  exoticCount = 0;
+  nonExoticCount = 0;
 
   constructor(
     public playerService: PlayerService,
@@ -75,6 +79,16 @@ export class AppComponent {
     this.players = this.playerService.players;
     this.intersection = this.playerService.combinedSets.intersection;
     this.playerService.minPower.subscribe((value) => (this.minPower = value));
+    this.playerService.combinedSetsLoading
+      .pipe(
+        distinctUntilChanged(),
+        tap((loading) => {
+          if (!loading) {
+            this.updateCounts();
+          }
+        })
+      )
+      .subscribe();
   }
 
   changeMinPower(value: any) {
@@ -169,7 +183,20 @@ export class AppComponent {
     });
 
     this.searchText = items
-      .map((item) => `(${item.displayProperties.name} hash:${item.hash})`)
+      .map((item) => {
+        const splitName = item.displayProperties.name
+          .split(' (')[0]
+          .split('_v1')[0];
+
+        const hashes =
+          splitName && this.manifestService.nonExoticNameLookup[splitName]
+            ? [...this.manifestService.nonExoticNameLookup[splitName]]
+            : [item.hash];
+
+        return `(${
+          splitName ? splitName : item.displayProperties.name
+        } (${hashes.map((hash) => `hash:${hash}`).join(' OR ')}))`;
+      })
       .join(' OR ');
 
     this.clipboard.copy(this.searchText);
@@ -185,7 +212,14 @@ export class AppComponent {
     }
   }
 
+  updateCounts(): void {
+    this.weaponCount = this.getWeaponCount();
+    this.exoticCount = this.getExoticCount();
+    this.nonExoticCount = this.getNonExoticCount();
+  }
+
   getWeaponCount(): number {
+    console.log('what');
     let countSet = new Set();
     this.manifestService.slotHashSet.forEach((slotHash) => {
       if (this.exotics !== 'exclude') {
@@ -229,6 +263,7 @@ export class AppComponent {
   }
 
   getExoticCount(): number {
+    console.log('what');
     let countSet = new Set();
     this.manifestService.slotHashSet.forEach((slotHash) => {
       if (this.intersection.exotics[slotHash]) {
