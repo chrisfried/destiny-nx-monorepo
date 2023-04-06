@@ -7,6 +7,7 @@ import {
 } from '@d2api/manifest';
 import { includeTables, loadDefs, setApiKey } from '@d2api/manifest-web';
 import { getCommonSettings } from 'bungie-api-ts/core';
+import { DestinyClass } from 'bungie-api-ts/destiny2';
 import { BehaviorSubject, EMPTY, from, lastValueFrom } from 'rxjs';
 import {
   catchError,
@@ -101,7 +102,10 @@ export class ManifestService {
                     ? getInventoryItemDef(collectible?.itemHash)
                     : undefined;
 
-                  if (item?.equippingBlock?.equipmentSlotTypeHash) {
+                  if (
+                    item?.equippingBlock?.equipmentSlotTypeHash &&
+                    item.classType === DestinyClass.Unknown
+                  ) {
                     this.slotHashSet.add(
                       item?.equippingBlock?.equipmentSlotTypeHash
                     );
@@ -157,7 +161,11 @@ export class ManifestService {
                     const slotHash =
                       item?.equippingBlock?.equipmentSlotTypeHash;
 
-                    if (slotHash && item.hash) {
+                    if (
+                      slotHash &&
+                      item.hash &&
+                      item.classType === DestinyClass.Unknown
+                    ) {
                       this.slotHashSet.add(slotHash);
                       this.nonExoticLookup[slotHash]
                         ? this.nonExoticLookup[slotHash].add(item.hash)
