@@ -14,7 +14,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { getCollectibleDef, getInventoryItemDef } from '@d2api/manifest';
-import { DestinyInventoryItemDefinition } from 'bungie-api-ts/destiny2';
+import { getEquipmentSlotDef } from '@d2api/manifest-web';
+import {
+  DestinyAmmunitionType,
+  DestinyInventoryItemDefinition,
+} from 'bungie-api-ts/destiny2';
 import { distinctUntilChanged, tap } from 'rxjs';
 import { ManifestService } from './manifest/manifest.service';
 import { PlayerComponent } from './player/player.component';
@@ -60,9 +64,11 @@ export class AppComponent {
   discordThreadId = '';
   manifestState = 'loading';
   nameInput = '';
-  collectionExotics = true;
+  collectionExotics = false;
   collectionNonExotics = false;
   requiresPull = false;
+  requirePrimary = false;
+  requireSpecial = false;
   weaponCount = 0;
   exoticCount = 0;
   nonExoticCount = 0;
@@ -115,7 +121,11 @@ export class AppComponent {
 
     let exoticAvailable = this.exotics;
 
+    let requirePrimary = this.requirePrimary;
+    let requireSpecial = this.requireSpecial;
+
     slotHashes.forEach((slotHash, i) => {
+      const slot = getEquipmentSlotDef(slotHash);
       // Handle Exotic
       if (i === 0) {
         if (exoticAvailable === 'include') {
@@ -149,6 +159,16 @@ export class AppComponent {
 
           if (item) {
             items.push(item);
+            if (
+              item.equippingBlock?.ammoType === DestinyAmmunitionType.Primary
+            ) {
+              requirePrimary = false;
+            }
+            if (
+              item.equippingBlock?.ammoType === DestinyAmmunitionType.Special
+            ) {
+              requireSpecial = false;
+            }
           }
 
           exoticAvailable = 'exclude';
@@ -157,13 +177,52 @@ export class AppComponent {
         }
       }
 
-      const pool = new Set([...this.intersection.nonExotics[slotHash]]);
+      let pool = new Set() as Set<number>;
+
+      if (slot?.index !== 9 && requirePrimary) {
+        pool = new Set(
+          [...this.intersection.nonExotics[slotHash]].filter((itemHash) =>
+            this.manifestService.ammoTypeLookup[
+              DestinyAmmunitionType.Primary
+            ].has(itemHash)
+          )
+        );
+      } else if (slot?.index !== 9 && requireSpecial) {
+        pool = new Set(
+          [...this.intersection.nonExotics[slotHash]].filter((itemHash) =>
+            this.manifestService.ammoTypeLookup[
+              DestinyAmmunitionType.Special
+            ].has(itemHash)
+          )
+        );
+      } else {
+        pool = new Set([...this.intersection.nonExotics[slotHash]]);
+      }
+
       if (this.collectionNonExotics) {
         this.intersection.pullableNonExotics[slotHash].forEach(
           (collectibleHash) => {
             const collectible = getCollectibleDef(collectibleHash);
             if (collectible?.itemHash) {
-              pool.add(collectible.itemHash);
+              if (slot?.index !== 9 && requirePrimary) {
+                if (
+                  this.manifestService.ammoTypeLookup[
+                    DestinyAmmunitionType.Primary
+                  ].has(collectible.itemHash)
+                ) {
+                  pool.add(collectible.itemHash);
+                }
+              } else if (slot?.index !== 9 && requireSpecial) {
+                if (
+                  this.manifestService.ammoTypeLookup[
+                    DestinyAmmunitionType.Special
+                  ].has(collectible.itemHash)
+                ) {
+                  pool.add(collectible.itemHash);
+                }
+              } else {
+                pool.add(collectible.itemHash);
+              }
             }
           }
         );
@@ -179,6 +238,12 @@ export class AppComponent {
 
       if (item) {
         items.push(item);
+        if (item.equippingBlock?.ammoType === DestinyAmmunitionType.Primary) {
+          requirePrimary = false;
+        }
+        if (item.equippingBlock?.ammoType === DestinyAmmunitionType.Special) {
+          requireSpecial = false;
+        }
       }
     });
 

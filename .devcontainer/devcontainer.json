@@ -13,6 +13,13 @@
         "firsttris.vscode-jest-runner",
         "dbaeumer.vscode-eslint"
       ]
+    },
+    "codespaces": {
+      "repositories": {
+        "chrisfried/party-randomizer": {
+          "permissions": "write-all"
+        }
+      }
     }
   }
 

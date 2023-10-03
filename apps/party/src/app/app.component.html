@@ -135,6 +135,17 @@
       </mat-card>
 
       <mat-card>
+        <mat-card-header
+          ><mat-card-title>Require</mat-card-title></mat-card-header
+        >
+        <mat-card-content>
+          <mat-checkbox [(ngModel)]="requirePrimary">Primary</mat-checkbox
+          ><br />
+          <mat-checkbox [(ngModel)]="requireSpecial">Special</mat-checkbox>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
         <mat-card-header>
           <mat-card-title>Discord Integration</mat-card-title>
           <mat-card-subtitle

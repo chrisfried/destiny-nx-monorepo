@@ -37,6 +37,11 @@ export class ManifestService {
     [name: string]: Set<number>;
   } = {};
 
+  ammoTypeSet = new Set<number>();
+  ammoTypeLookup: {
+    [ammo: number]: Set<number>;
+  } = {};
+
   pullableExotics: {
     [slotHash: number]: Set<number>;
   } = {};
@@ -51,6 +56,7 @@ export class ManifestService {
       'InventoryBucket',
       'InventoryItem',
       'PresentationNode',
+      'EquipmentSlot',
     ]);
 
     this.loadManifest();
@@ -101,38 +107,34 @@ export class ManifestService {
                   const item = collectible?.itemHash
                     ? getInventoryItemDef(collectible?.itemHash)
                     : undefined;
+                  const slotHash = item?.equippingBlock?.equipmentSlotTypeHash;
+                  const ammoType = item?.equippingBlock?.ammoType;
 
                   if (
-                    item?.equippingBlock?.equipmentSlotTypeHash &&
+                    slotHash &&
+                    ammoType &&
+                    item.hash &&
                     item.classType === DestinyClass.Unknown
                   ) {
-                    this.slotHashSet.add(
-                      item?.equippingBlock?.equipmentSlotTypeHash
-                    );
+                    this.slotHashSet.add(slotHash);
+                    this.exoticLookup[slotHash]
+                      ? this.exoticLookup[slotHash].add(item.hash)
+                      : (this.exoticLookup[slotHash] = new Set([item.hash]));
 
-                    this.exoticLookup[
-                      item?.equippingBlock?.equipmentSlotTypeHash
-                    ]
-                      ? this.exoticLookup[
-                          item?.equippingBlock?.equipmentSlotTypeHash
-                        ].add(item.hash)
-                      : (this.exoticLookup[
-                          item?.equippingBlock?.equipmentSlotTypeHash
-                        ] = new Set([item.hash]));
+                    this.ammoTypeSet.add(ammoType);
+                    this.ammoTypeLookup[ammoType]
+                      ? this.ammoTypeLookup[ammoType].add(item.hash)
+                      : (this.ammoTypeLookup[ammoType] = new Set([item.hash]));
 
                     if (
                       collectible?.acquisitionInfo
                         ?.acquireMaterialRequirementHash
                     ) {
-                      this.pullableExotics[
-                        item?.equippingBlock?.equipmentSlotTypeHash
-                      ]
-                        ? this.pullableExotics[
-                            item?.equippingBlock?.equipmentSlotTypeHash
-                          ].add(collectible.hash)
-                        : (this.pullableExotics[
-                            item?.equippingBlock?.equipmentSlotTypeHash
-                          ] = new Set([collectible.hash]));
+                      this.pullableExotics[slotHash]
+                        ? this.pullableExotics[slotHash].add(collectible.hash)
+                        : (this.pullableExotics[slotHash] = new Set([
+                            collectible.hash,
+                          ]));
                     }
                   }
                 });
@@ -160,9 +162,11 @@ export class ManifestService {
                       : undefined;
                     const slotHash =
                       item?.equippingBlock?.equipmentSlotTypeHash;
+                    const ammoType = item?.equippingBlock?.ammoType;
 
                     if (
                       slotHash &&
+                      ammoType &&
                       item.hash &&
                       item.classType === DestinyClass.Unknown
                     ) {
@@ -170,6 +174,13 @@ export class ManifestService {
                       this.nonExoticLookup[slotHash]
                         ? this.nonExoticLookup[slotHash].add(item.hash)
                         : (this.nonExoticLookup[slotHash] = new Set([
+                            item.hash,
+                          ]));
+
+                      this.ammoTypeSet.add(ammoType);
+                      this.ammoTypeLookup[ammoType]
+                        ? this.ammoTypeLookup[ammoType].add(item.hash)
+                        : (this.ammoTypeLookup[ammoType] = new Set([
                             item.hash,
                           ]));
 
