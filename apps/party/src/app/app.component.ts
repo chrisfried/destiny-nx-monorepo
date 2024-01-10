@@ -175,7 +175,6 @@ export class AppComponent {
     this.startP2pcf();
   }
 
-  equip() {}
 
   newRoom() {
     this.joinedRoom = true;
