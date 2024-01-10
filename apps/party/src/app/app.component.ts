@@ -19,7 +19,25 @@ import {
   DestinyAmmunitionType,
   DestinyInventoryItemDefinition,
 } from 'bungie-api-ts/destiny2';
-import { distinctUntilChanged, tap } from 'rxjs';
+import {
+  UserMembershipData,
+  getMembershipDataForCurrentUser,
+} from 'bungie-api-ts/user';
+// @ts-expect-error: No types available
+import P2PCF from 'p2pcf';
+import {
+  EMPTY,
+  distinctUntilChanged,
+  from,
+  lastValueFrom,
+  map,
+  switchMap,
+  take,
+  tap,
+} from 'rxjs';
+import { BungieAuthModule } from './bungie-auth/bungie-auth.module';
+import { BungieAuthService } from './bungie-auth/bungie-auth.service';
+import { BungieStatusComponent } from './bungie-status/bungie-status.component';
 import { ManifestService } from './manifest/manifest.service';
 import { PlayerComponent } from './player/player.component';
 import { PlayerService } from './player/player.service';
@@ -51,10 +69,11 @@ import {
     MatProgressSpinnerModule,
     WebringComponent,
     WebringSheetComponent,
+    BungieAuthModule,
+    BungieStatusComponent,
   ],
 })
 export class AppComponent {
-  players;
   randomizationType: 'weaponSet' | 'archetypeSet' | 'typeSet' = 'weaponSet';
   exotics: 'exclude' | 'include' | 'required' = 'include';
   intersection;
@@ -64,6 +83,7 @@ export class AppComponent {
   discordThreadId = '';
   manifestState = 'loading';
   nameInput = '';
+  roomCode = '';
   collectionExotics = false;
   collectionNonExotics = false;
   requiresPull = false;
@@ -72,17 +92,46 @@ export class AppComponent {
   weaponCount = 0;
   exoticCount = 0;
   nonExoticCount = 0;
+  p2pcf: any;
+  joinedRoom = false;
+  currentLoadout: DestinyInventoryItemDefinition[] = [];
+
+  localMembership?: UserMembershipData;
 
   constructor(
     public playerService: PlayerService,
     private manifestService: ManifestService,
     private clipboard: Clipboard,
-    private http: HttpClient
+    private http: HttpClient,
+    public bungieAuth: BungieAuthService
   ) {
     this.manifestService.state$.subscribe(
       (state) => (this.manifestState = state)
     );
-    this.players = this.playerService.players;
+    this.bungieAuth.hasValidAccessToken$
+      .pipe(
+        switchMap((hasToken) => {
+          if (hasToken) {
+            return from(
+              getMembershipDataForCurrentUser((config) =>
+                lastValueFrom(
+                  this.http.request(config.method, config.url, {
+                    params: config.params,
+                    body: config.body,
+                  })
+                )
+              )
+            );
+          } else {
+            return EMPTY;
+          }
+        }),
+        map((res) => {
+          this.localMembership = res.Response;
+          this.playerService.addLocalPlayer(this.localMembership);
+        })
+      )
+      .subscribe();
     this.intersection = this.playerService.combinedSets.intersection;
     this.playerService.minPower.subscribe((value) => (this.minPower = value));
     this.playerService.combinedSetsLoading
@@ -95,6 +144,117 @@ export class AppComponent {
         })
       )
       .subscribe();
+
+    this.playerService.localPlayer$
+      .pipe(
+        map((player) => {
+          this.p2pcf?.broadcast(
+            new TextEncoder().encode(
+              JSON.stringify({ type: 'player', body: player })
+            )
+          );
+        })
+      )
+      .subscribe();
+  }
+
+  login(): void {
+    this.bungieAuth.login();
+  }
+
+  logout(): void {
+    this.bungieAuth.logout();
+  }
+
+  joinRoom() {
+    this.currentLoadout = [];
+    this.searchText = '';
+    this.roomCode = this.roomCode.toUpperCase();
+    this.joinedRoom = true;
+
+    this.startP2pcf();
+  }
+
+  equip() {}
+
+  newRoom() {
+    this.joinedRoom = true;
+
+    let code = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const charactersLength = characters.length;
+    for (let i = 0; i < 4; i++) {
+      code += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    this.roomCode = code;
+
+    this.startP2pcf();
+  }
+
+  startP2pcf() {
+    this.p2pcf = new P2PCF(
+      this.localMembership?.primaryMembershipId ??
+        this.localMembership?.destinyMemberships[0].membershipId,
+      `d2srl-${this.roomCode}`,
+      {
+        workerUrl: 'https://p2pcf.chrisfried.workers.dev/',
+      }
+    );
+
+    this.p2pcf.start();
+
+    this.p2pcf.on('peerconnect', (peer: any) => {
+      // New peer connected
+
+      // Peer is an instance of simple-peer (https://github.com/feross/simple-peer)
+      //
+      // The peer has two custom fields:
+      // - id (a per session unique id)
+      // - client_id (which was passed to their P2PCF constructor)
+      this.playerService.localPlayer$
+        .pipe(
+          take(1),
+          map((player) => {
+            this.p2pcf?.broadcast(
+              new TextEncoder().encode(
+                JSON.stringify({ type: 'player', body: player })
+              )
+            );
+            if (this.searchText || this.currentLoadout.length > 0) {
+              this.p2pcf?.broadcast(
+                new TextEncoder().encode(
+                  JSON.stringify({
+                    type: 'loadout',
+                    body: this.searchText,
+                    loadout: this.currentLoadout,
+                  })
+                )
+              );
+            }
+          })
+        )
+        .subscribe();
+    });
+
+    this.p2pcf.on('peerclose', (peer: any) => {
+      // Peer has disconnected
+      this.playerService.removePlayer(peer.client_id);
+    });
+
+    this.p2pcf.on('msg', (peer: any, data: any) => {
+      const msg = JSON.parse(new TextDecoder('utf-8').decode(data));
+      if (msg.type === 'loadout') {
+        this.searchText = msg.body;
+        this.currentLoadout = msg.loadout;
+      }
+      if (msg.type === 'player') {
+        this.playerService.addRemotePlayer(msg.body);
+      }
+    });
+  }
+
+  leaveRoom() {
+    location.reload();
   }
 
   changeMinPower(value: any) {
@@ -105,16 +265,10 @@ export class AppComponent {
     }
   }
 
-  addPlayer() {
-    this.playerService.addPlayer(this.nameInput);
-    this.nameInput = '';
-  }
-
   randomize() {
     this.searchText = '';
+    this.currentLoadout = [];
     this.requiresPull = false;
-
-    const items: DestinyInventoryItemDefinition[] = [];
 
     const slotHashes = Array.from(this.manifestService.slotHashSet);
     slotHashes.sort(() => Math.random() - 0.5);
@@ -158,7 +312,7 @@ export class AppComponent {
           const item = getInventoryItemDef(itemHash);
 
           if (item) {
-            items.push(item);
+            this.currentLoadout.push(item);
             if (
               item.equippingBlock?.ammoType === DestinyAmmunitionType.Primary
             ) {
@@ -237,7 +391,7 @@ export class AppComponent {
       const item = getInventoryItemDef(itemHash);
 
       if (item) {
-        items.push(item);
+        this.currentLoadout.push(item);
         if (item.equippingBlock?.ammoType === DestinyAmmunitionType.Primary) {
           requirePrimary = false;
         }
@@ -247,7 +401,7 @@ export class AppComponent {
       }
     });
 
-    this.searchText = items
+    this.searchText = this.currentLoadout
       .map((item) => {
         const splitName = item.displayProperties.name
           .split(' (')[0]
@@ -275,6 +429,24 @@ export class AppComponent {
         })
         .subscribe();
     }
+
+    this.p2pcf.broadcast(
+      new TextEncoder().encode(
+        JSON.stringify({
+          type: 'loadout',
+          body: this.searchText,
+          loadout: this.currentLoadout,
+        })
+      )
+    );
+  }
+
+  copyCode() {
+    this.clipboard.copy(this.roomCode);
+  }
+
+  copySearch() {
+    this.clipboard.copy(this.searchText);
   }
 
   updateCounts(): void {

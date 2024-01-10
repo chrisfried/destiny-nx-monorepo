@@ -31,14 +31,12 @@ export class BungieAuthInterceptor implements HttpInterceptor {
       return next.handle(req);
     }
     let headers = req.headers;
-    if (url.indexOf('common/destiny2_content') > 0) {
-    } else {
+    if (url.indexOf('common/destiny2_content') < 0) {
       headers = headers.set('X-API-Key', environment.bungie.apiKey);
       if (
-        url === 'https://www.bungie.net/platform/app/oauth/token/' ||
-        url.indexOf('getmembershipsbyid') > 0
+        url !== 'https://www.bungie.net/platform/app/oauth/token/' &&
+        url.indexOf('getmembershipsbyid') < 0
       ) {
-      } else {
         if (this.authStorage.getItem('access_token')) {
           headers = headers.set(
             'Authorization',

@@ -38,23 +38,19 @@ export class PlayerComponent {
   ) {}
 
   refreshPlayer() {
-    if (this.player.status === 'ready') {
+    if (this.player) {
       this.playerService.fetchWeapons(this.player);
-    } else {
-      this.playerService.findDestinyMembership(this.player);
     }
   }
 
-  removePlayer() {
-    this.playerService.removePlayer(this.index);
-  }
-
   selectMembership(membership: UserInfoCard) {
-    this.player.name = membership.bungieGlobalDisplayName;
-    this.player.nameCode = membership.bungieGlobalDisplayNameCode;
-    this.player.membershipType = membership.membershipType;
-    this.player.membershipId = membership.membershipId;
-    this.playerService.fetchWeapons(this.player);
+    if (this.player) {
+      this.player.name = membership.bungieGlobalDisplayName;
+      this.player.nameCode = membership.bungieGlobalDisplayNameCode;
+      this.player.membershipType = membership.membershipType;
+      this.player.membershipId = membership.membershipId;
+      this.playerService.fetchWeapons(this.player);
+    }
   }
 
   getWeaponCount(): number {

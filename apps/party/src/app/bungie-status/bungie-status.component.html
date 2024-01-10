@@ -1,0 +1,6 @@
+<mat-card
+  appearance="outlined"
+  *ngFor="let alert of bungieStatus | async"
+  [innerHtml]="alert.AlertHtml"
+>
+</mat-card>

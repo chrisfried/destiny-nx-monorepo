@@ -6,6 +6,9 @@ export const environment = {
   production: false,
   bungie: {
     apiKey: '2cbdc69e9a224c2182f5860de312d778',
+    authUrl: 'https://www.bungie.net/en/OAuth/Authorize',
+    clientId: '36110',
+    redirect: 'https://localhost:4200',
   },
 };
 

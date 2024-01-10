@@ -1,5 +1,7 @@
 <destiny-webring></destiny-webring>
 <div class="main-content">
+  <destiny-bungie-status class="bungieStatus"></destiny-bungie-status>
+
   <div class="title-block section">
     <div class="title">
       <span class="srl srl-one">SRL</span>¹ is Dead<br />
@@ -11,22 +13,105 @@
     </div>
   </div>
 
+  <div style="margin-bottom: 1em">
+    <button
+      *ngIf="(bungieAuth.hasValidAccessToken$ | async) === false"
+      mat-raised-button
+      color="primary"
+      class="button"
+      (click)="login()"
+    >
+      Login with Bungie
+      <mat-icon aria-label="Login with Bungie">login</mat-icon>
+    </button>
+    <button
+      *ngIf="bungieAuth.hasValidAccessToken$ | async"
+      mat-raised-button
+      class="button"
+      (click)="logout()"
+    >
+      Logout <mat-icon aria-label="Logout">logout</mat-icon>
+    </button>
+  </div>
+
+  <form
+    (ngSubmit)="joinRoom()"
+    *ngIf="
+      (bungieAuth.hasValidAccessToken$ | async) && manifestState === 'ready'
+    "
+  >
+    <mat-form-field class="example-full-width">
+      <mat-label>Fireteam Code</mat-label>
+      <input
+        matInput
+        placeholder="ABCD"
+        [(ngModel)]="roomCode"
+        [ngModelOptions]="{ standalone: true }"
+        [readonly]="joinedRoom"
+        uppercase
+        maxlength="4"
+      />
+    </mat-form-field>
+    <button
+      color="primary"
+      type="submit"
+      mat-raised-button
+      *ngIf="!joinedRoom"
+      [disabled]="
+        (playerService.localPlayer$ | async) === null || roomCode.length !== 4
+      "
+    >
+      Join Fireteam
+      <mat-icon aria-label="Leave Fireteam">group</mat-icon>
+    </button>
+    <button
+      color="accent"
+      (click)="newRoom()"
+      mat-raised-button
+      *ngIf="!joinedRoom"
+      [disabled]="(playerService.localPlayer$ | async) === null"
+    >
+      Create Fireteam
+      <mat-icon aria-label="Create Fireteam">group_add</mat-icon>
+    </button>
+    <button
+      color="warn"
+      (click)="leaveRoom()"
+      mat-raised-button
+      *ngIf="joinedRoom"
+    >
+      Leave Fireteam
+      <mat-icon aria-label="Leave Fireteam">group_off</mat-icon>
+    </button>
+    <button
+      color="accent"
+      (click)="copyCode()"
+      mat-raised-button
+      *ngIf="joinedRoom"
+    >
+      Copy Fireteam Code
+      <mat-icon aria-label="Copy Fireteam Code">content_copy</mat-icon>
+    </button>
+  </form>
+
   <mat-spinner *ngIf="manifestState === 'loading'"></mat-spinner>
 
   <div class="section" *ngIf="manifestState === 'erred'">
     Error loading Destiny Manifest
   </div>
 
-  <mat-card class="section" *ngIf="manifestState === 'ready'">
+  <mat-card class="section" *ngIf="manifestState === 'ready' && joinedRoom">
     <mat-card-header>
       <mat-card-title>SRL²</mat-card-title>
     </mat-card-header>
     <mat-card-content>
-      <div class="code-block">
-        <code>{{
-          searchText ||
-            'Add Guardians, select options, then click the button to generate a DIM search query'
-        }}</code>
+      <div class="items">
+        <img
+          *ngFor="let item of currentLoadout"
+          [src]="'https://bungie.net' + item.displayProperties.icon"
+          [title]="item.displayProperties.name"
+          class="item-icon"
+        />
       </div>
     </mat-card-content>
 
@@ -37,7 +122,26 @@
         (click)="randomize()"
         mat-raised-button
       >
-        Randomize & Copy to Clipboard
+        New Loadout
+        <mat-icon aria-label="Randomize Loadout">shuffle</mat-icon>
+      </button>
+      <button
+        [disabled]="(playerService.combinedSetsLoading | async) || !searchText"
+        color="accent"
+        (click)="copySearch()"
+        mat-raised-button
+      >
+        Copy DIM Search
+        <mat-icon aria-label="Copy DIM Search">content_copy</mat-icon>
+      </button>
+      <button
+        [disabled]="true"
+        color="accent"
+        (click)="copySearch()"
+        mat-raised-button
+      >
+        Equip Loadout
+        <mat-icon aria-label="Equip Loadout">flip_to_front</mat-icon>
       </button>
     </mat-card-actions>
 
@@ -46,23 +150,11 @@
     </mat-card-footer>
   </mat-card>
 
-  <div class="section" *ngIf="manifestState === 'ready'">
+  <div class="section" *ngIf="manifestState === 'ready' && joinedRoom">
     <h2>Guardians</h2>
-    <form (ngSubmit)="addPlayer()">
-      <mat-form-field class="example-full-width">
-        <mat-label>Bungie Name</mat-label>
-        <input
-          matInput
-          placeholder="Name or Name#1234"
-          [(ngModel)]="nameInput"
-          [ngModelOptions]="{ standalone: true }"
-        />
-      </mat-form-field>
-      <button color="primary" type="submit" mat-raised-button>Add</button>
-    </form>
     <div class="player-cards">
       <destiny-player
-        *ngFor="let player of players; index as i"
+        *ngFor="let player of playerService.players$ | async; index as i"
         [player]="player"
         [index]="i"
         [exotics]="exotics"
@@ -92,7 +184,7 @@
     </div>
   </div>
 
-  <div class="section">
+  <div class="section" *ngIf="manifestState === 'ready' && joinedRoom">
     <h2>Options</h2>
 
     <div class="option-cards">
@@ -176,29 +268,4 @@
       </mat-card>
     </div>
   </div>
-
-  <mat-expansion-panel hideToggle>
-    <mat-expansion-panel-header>
-      <mat-panel-title> Help </mat-panel-title>
-    </mat-expansion-panel-header>
-
-    <p>
-      Make sure all Guardians have the following two options enabled in their
-      <a
-        rel="noopener"
-        href="https://www.bungie.net/7/en/User/Account/Privacy"
-        target="_blank"
-        >Bungie.net Privacy Settings</a
-      >:
-    </p>
-    <ul>
-      <li>Show my non-equipped Inventory</li>
-      <li>Show my progression</li>
-    </ul>
-    <p>It may take a few minutes for Privacy Settings changes to be applied.</p>
-    <img
-      alt="screenshot showing the location of the relevant settings on bungie.net"
-      src="./assets/privacy.png"
-    />
-  </mat-expansion-panel>
 </div>

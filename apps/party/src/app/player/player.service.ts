@@ -5,18 +5,22 @@ import { BungieMembershipType } from 'bungie-api-ts/common';
 import {
   DestinyCollectibleState,
   DestinyComponentType,
+  DestinyProfileResponse,
   getProfile,
-  searchDestinyPlayerByBungieName,
 } from 'bungie-api-ts/destiny2';
-import { searchByGlobalNamePost } from 'bungie-api-ts/user';
-import { UserInfoCard } from 'bungie-api-ts/user/interfaces';
+import {
+  UserInfoCard,
+  UserMembershipData,
+} from 'bungie-api-ts/user/interfaces';
 import {
   BehaviorSubject,
-  catchError,
   EMPTY,
+  catchError,
+  combineLatest,
   from,
   lastValueFrom,
   map,
+  take,
 } from 'rxjs';
 import { ManifestService } from '../manifest/manifest.service';
 
@@ -24,7 +28,6 @@ import { ManifestService } from '../manifest/manifest.service';
   providedIn: 'root',
 })
 export class PlayerService {
-  players: DestinyPlayer[] = [];
   combinedSets: {
     [key: string]: {
       exotics: {
@@ -67,13 +70,38 @@ export class PlayerService {
   ]);
   minPower = new BehaviorSubject(0);
   combinedSetsLoading = new BehaviorSubject(false);
+  localPlayerProfile$ = new BehaviorSubject<DestinyProfileResponse | null>(
+    null
+  );
+  localPlayer$ = new BehaviorSubject<DestinyPlayer | null>(null);
+  remotePlayers$ = new BehaviorSubject<DestinyPlayer[]>([]);
+  players$ = combineLatest([this.localPlayer$, this.remotePlayers$]).pipe(
+    map(([localPlayer, remotePlayers]) =>
+      localPlayer ? [localPlayer, ...remotePlayers] : remotePlayers
+    )
+  );
 
-  constructor(private http: HttpClient, private manifest: ManifestService) {}
+  constructor(private http: HttpClient, private manifest: ManifestService) {
+    combineLatest([this.localPlayer$, this.remotePlayers$])
+      .pipe(
+        map(([localPlayer, remotePlayers]) => {
+          if (
+            localPlayer?.status === 'loading' ||
+            remotePlayers.filter((p) => p.status === 'loading').length > 0
+          ) {
+            this.combinedSetsLoading.next(true);
+          } else {
+            this.updateCombinedSets();
+          }
+        })
+      )
+      .subscribe();
+  }
 
-  addPlayer(name: string) {
-    this.combinedSetsLoading.next(true);
+  addLocalPlayer(membership: UserMembershipData) {
     const player: DestinyPlayer = {
-      name: name,
+      name: '',
+      localPlayer: true,
       status: 'loading',
       membershipId: '',
       membershipType: BungieMembershipType.None,
@@ -86,119 +114,68 @@ export class PlayerService {
       pullableExotics: {},
       pullableNonExotics: {},
     };
-    this.players.push(player);
-    this.findDestinyMembership(player);
-  }
 
-  removePlayer(index: number) {
-    this.players.splice(index, 1);
-    this.updateCombinedSets();
-  }
-
-  findDestinyMembership(player: DestinyPlayer) {
-    player.status = 'loading';
-    player.possibleMemberships = [];
-    if (player.name.indexOf('#') > -1) {
-      from(
-        searchDestinyPlayerByBungieName(
-          (config) =>
-            lastValueFrom(
-              this.http.request(config.method, config.url, {
-                params: config.params,
-                body: config.body,
-              })
-            ),
-          {
-            membershipType: BungieMembershipType.All,
-          },
-          {
-            displayName: player.name.split('#')[0],
-            displayNameCode: Number(player.name.split('#')[1]),
-          }
-        )
-      ).subscribe({
-        next: (res) => {
-          const memberships = res.Response.filter(
-            (p) => p.applicableMembershipTypes.length > 0
-          );
-
-          this.handleMemberships(player, memberships);
-        },
-        error: (err) => {
-          console.error(err);
-          player.status = 'erred';
-          this.updateCombinedSets();
-        },
-      });
-    } else {
-      from(
-        searchByGlobalNamePost(
-          (config) =>
-            lastValueFrom(
-              this.http.request(config.method, config.url, {
-                params: config.params,
-                body: config.body,
-              })
-            ),
-          {
-            page: 0,
-          },
-          {
-            displayNamePrefix: player.name,
-          }
-        )
-      ).subscribe({
-        next: (res) => {
-          if (res.Response.searchResults.length < 1) {
-            player.status = 'erred';
-            this.updateCombinedSets();
-          } else if (res.Response.searchResults.length > 1) {
-            const memberships = res.Response.searchResults.flatMap((result) =>
-              result.destinyMemberships.filter(
-                (mem) => mem.applicableMembershipTypes.length > 0
-              )
-            );
-            this.handleMemberships(player, memberships);
-          } else {
-            const memberships =
-              res.Response.searchResults[0].destinyMemberships.filter(
-                (p) => p.applicableMembershipTypes.length > 0
-              );
-
-            this.handleMemberships(player, memberships);
-          }
-        },
-        error: (err) => {
-          console.error(err);
-          player.status = 'erred';
-          this.updateCombinedSets();
-        },
-      });
-    }
-  }
-
-  handleMemberships(player: DestinyPlayer, memberships: UserInfoCard[]) {
-    if (memberships.length < 1) {
-      player.status = 'erred';
-      this.updateCombinedSets();
-    } else if (memberships.length > 1) {
-      memberships.forEach((mem) => player.possibleMemberships?.push(mem));
+    if (
+      membership.destinyMemberships.length > 1 &&
+      !membership.primaryMembershipId
+    ) {
+      membership.destinyMemberships.forEach((mem) =>
+        player.possibleMemberships?.push(mem)
+      );
       player.status = 'chooseMembership';
-      this.updateCombinedSets();
     } else {
-      const playerRes = memberships[0];
+      const playerRes = membership.primaryMembershipId
+        ? membership.destinyMemberships.filter(
+            (mem) => mem.membershipId === membership.primaryMembershipId
+          )[0]
+        : membership.destinyMemberships[0];
 
       player.name = playerRes.bungieGlobalDisplayName;
       player.nameCode = playerRes.bungieGlobalDisplayNameCode;
       player.membershipId = playerRes.membershipId;
       player.membershipType = playerRes.membershipType;
 
-      this.fetchWeapons(player);
+      this.localPlayer$.next(player);
+
+      this.manifest.state$.subscribe((state) => {
+        if (state === 'ready') {
+          this.fetchWeapons(player);
+        }
+      });
     }
   }
 
+  addRemotePlayer(player: DestinyPlayer) {
+    player.localPlayer = false;
+    this.remotePlayers$
+      .pipe(
+        take(1),
+        map((remotePlayers) => {
+          this.remotePlayers$.next([
+            player,
+            ...remotePlayers.filter(
+              (p) => p.membershipId !== player.membershipId
+            ),
+          ]);
+        })
+      )
+      .subscribe();
+  }
+
+  removePlayer(membershipId: string) {
+    this.remotePlayers$
+      .pipe(
+        take(1),
+        map((remotePlayers) => {
+          this.remotePlayers$.next(
+            remotePlayers.filter((p) => p.membershipId !== membershipId)
+          );
+        })
+      )
+      .subscribe();
+  }
+
   fetchWeapons(player: DestinyPlayer) {
-    this.combinedSetsLoading.next(true);
     player.status = 'loading';
     player.suspectNonEquippedDisabled = false;
     player.suspectProgressionDisabled = false;
@@ -208,6 +185,8 @@ export class PlayerService {
     // player.archetypes =  {};
     player.pullableExotics = {};
     player.pullableNonExotics = {};
+
+    this.localPlayer$.next(player);
 
     from(
       getProfile(
@@ -222,18 +201,19 @@ export class PlayerService {
           destinyMembershipId: player.membershipId,
           membershipType: player.membershipType,
           components: [
+            DestinyComponentType.Collectibles,
             DestinyComponentType.CharacterEquipment,
             DestinyComponentType.CharacterInventories,
-            DestinyComponentType.ProfileInventories,
-            DestinyComponentType.Collectibles,
             DestinyComponentType.Characters,
             DestinyComponentType.ItemInstances,
+            DestinyComponentType.ProfileInventories,
           ],
         }
       )
     )
       .pipe(
         map((res) => {
+          this.localPlayerProfile$.next(res.Response);
           const charactersData = res.Response.characters.data;
           if (charactersData) {
             const keys = Object.keys(charactersData);
@@ -324,12 +304,12 @@ export class PlayerService {
           }
 
           player.status = 'ready';
-          this.updateCombinedSets();
+          this.localPlayer$.next(player);
         }),
         catchError((err, caught) => {
           console.error(err);
           player.status = 'erred';
-          this.updateCombinedSets();
+          this.localPlayer$.next(player);
 
           return EMPTY;
         })
@@ -353,13 +333,13 @@ export class PlayerService {
     this.manifest.slotHashSet.forEach((slotHash) => {
       if (this.manifest.exoticLookup[slotHash].has(firstHash)) {
         player.exotics[slotHash]
-          ? player.exotics[slotHash].add(firstHash)
-          : (player.exotics[slotHash] = new Set([firstHash]));
+          ? player.exotics[slotHash].push(firstHash)
+          : (player.exotics[slotHash] = [firstHash]);
       }
       if (this.manifest.nonExoticLookup[slotHash].has(firstHash)) {
         player.nonExotics[slotHash]
-          ? player.nonExotics[slotHash].add(firstHash)
-          : (player.nonExotics[slotHash] = new Set([firstHash]));
+          ? player.nonExotics[slotHash].push(firstHash)
+          : (player.nonExotics[slotHash] = [firstHash]);
       }
     });
   }
@@ -368,117 +348,141 @@ export class PlayerService {
     this.manifest.slotHashSet.forEach((slotHash) => {
       if (this.manifest.pullableExotics[slotHash].has(collectibleHash)) {
         player.pullableExotics[slotHash]
-          ? player.pullableExotics[slotHash].add(collectibleHash)
-          : (player.pullableExotics[slotHash] = new Set([collectibleHash]));
+          ? player.pullableExotics[slotHash].push(collectibleHash)
+          : (player.pullableExotics[slotHash] = [collectibleHash]);
       }
       if (this.manifest.pullableNonExotics[slotHash].has(collectibleHash)) {
         player.pullableNonExotics[slotHash]
-          ? player.pullableNonExotics[slotHash].add(collectibleHash)
-          : (player.pullableNonExotics[slotHash] = new Set([collectibleHash]));
+          ? player.pullableNonExotics[slotHash].push(collectibleHash)
+          : (player.pullableNonExotics[slotHash] = [collectibleHash]);
       }
     });
   }
 
   updateCombinedSets() {
-    const loading =
-      this.players.filter((p) => p.status === 'loading').length > 0;
-    if (loading) {
-      return;
-    }
+    this.players$
+      .pipe(
+        take(1),
+        map((players) => {
+          const loading =
+            players.filter((p) => p.status === 'loading').length > 0;
+          if (loading) {
+            return;
+          }
 
-    this.manifest.slotHashSet.forEach((slotHash) => {
-      this.combinedSets.union.exotics[slotHash] = new Set();
-      this.combinedSets.union.nonExotics[slotHash] = new Set();
-      this.combinedSets.union.pullableExotics[slotHash] = new Set();
-      this.combinedSets.union.pullableNonExotics[slotHash] = new Set();
-    });
+          this.manifest.slotHashSet.forEach((slotHash) => {
+            this.combinedSets.union.exotics[slotHash] = new Set();
+            this.combinedSets.union.nonExotics[slotHash] = new Set();
+            this.combinedSets.union.pullableExotics[slotHash] = new Set();
+            this.combinedSets.union.pullableNonExotics[slotHash] = new Set();
+          });
 
-    this.players
-      .filter((p) => p.status === 'ready')
-      .forEach((player) => {
-        this.manifest.slotHashSet.forEach((slotHash) => {
-          this.combinedSets.union.exotics[slotHash] = new Set([
-            ...this.combinedSets.union.exotics[slotHash],
-            ...(player.exotics[slotHash] || []),
-          ]);
-          this.combinedSets.union.nonExotics[slotHash] = new Set([
-            ...this.combinedSets.union.nonExotics[slotHash],
-            ...(player.nonExotics[slotHash] || []),
-          ]);
-          this.combinedSets.union.pullableExotics[slotHash] = new Set([
-            ...this.combinedSets.union.pullableExotics[slotHash],
-            ...(player.pullableExotics[slotHash] || []),
-          ]);
-          this.combinedSets.union.pullableNonExotics[slotHash] = new Set([
-            ...this.combinedSets.union.pullableNonExotics[slotHash],
-            ...(player.pullableNonExotics[slotHash] || []),
-          ]);
-        });
-      });
+          players
+            .filter((p) => p.status === 'ready')
+            .forEach((player) => {
+              this.manifest.slotHashSet.forEach((slotHash) => {
+                this.combinedSets.union.exotics[slotHash] = new Set([
+                  ...this.combinedSets.union.exotics[slotHash],
+                  ...(player.exotics[slotHash] || []),
+                ]);
+                this.combinedSets.union.nonExotics[slotHash] = new Set([
+                  ...this.combinedSets.union.nonExotics[slotHash],
+                  ...(player.nonExotics[slotHash] || []),
+                ]);
+                this.combinedSets.union.pullableExotics[slotHash] = new Set([
+                  ...this.combinedSets.union.pullableExotics[slotHash],
+                  ...(player.pullableExotics[slotHash] || []),
+                ]);
+                this.combinedSets.union.pullableNonExotics[slotHash] = new Set([
+                  ...this.combinedSets.union.pullableNonExotics[slotHash],
+                  ...(player.pullableNonExotics[slotHash] || []),
+                ]);
+              });
+            });
 
-    this.manifest.slotHashSet.forEach((slotHash) => {
-      this.combinedSets.intersection.exotics[slotHash] = new Set([
-        ...this.combinedSets.union.exotics[slotHash],
-      ]);
-      this.combinedSets.intersection.nonExotics[slotHash] = new Set([
-        ...this.combinedSets.union.nonExotics[slotHash],
-      ]);
-      this.combinedSets.intersection.pullableExotics[slotHash] = new Set([
-        ...this.combinedSets.union.pullableExotics[slotHash],
-      ]);
-      this.combinedSets.intersection.pullableNonExotics[slotHash] = new Set([
-        ...this.combinedSets.union.pullableNonExotics[slotHash],
-      ]);
-    });
+          this.manifest.slotHashSet.forEach((slotHash) => {
+            this.combinedSets.intersection.exotics[slotHash] = new Set([
+              ...this.combinedSets.union.exotics[slotHash],
+            ]);
+            this.combinedSets.intersection.nonExotics[slotHash] = new Set([
+              ...this.combinedSets.union.nonExotics[slotHash],
+            ]);
+            this.combinedSets.intersection.pullableExotics[slotHash] = new Set([
+              ...this.combinedSets.union.pullableExotics[slotHash],
+            ]);
+            this.combinedSets.intersection.pullableNonExotics[slotHash] =
+              new Set([
+                ...this.combinedSets.union.pullableNonExotics[slotHash],
+              ]);
+          });
 
-    this.players
-      .filter((p) => p.status === 'ready')
-      .forEach((player) => {
-        this.manifest.slotHashSet.forEach((slotHash) => {
-          this.combinedSets.intersection.exotics[slotHash] = new Set(
-            player.exotics[slotHash]
-              ? [...this.combinedSets.intersection.exotics[slotHash]].filter(
-                  (itemHash: number) => player.exotics[slotHash].has(itemHash)
-                )
-              : []
-          );
-          this.combinedSets.intersection.nonExotics[slotHash] = new Set(
-            player.nonExotics[slotHash]
-              ? [...this.combinedSets.intersection.nonExotics[slotHash]].filter(
-                  (itemHash: number) =>
-                    player.nonExotics[slotHash].has(itemHash)
-                )
-              : []
-          );
-          this.combinedSets.intersection.pullableExotics[slotHash] = new Set(
-            player.pullableExotics[slotHash]
-              ? [
-                  ...this.combinedSets.intersection.pullableExotics[slotHash],
-                ].filter((collectibleHash: number) =>
-                  player.pullableExotics[slotHash].has(collectibleHash)
-                )
-              : []
-          );
-          this.combinedSets.intersection.pullableNonExotics[slotHash] = new Set(
-            player.pullableNonExotics[slotHash]
-              ? [
-                  ...this.combinedSets.intersection.pullableNonExotics[
-                    slotHash
-                  ],
-                ].filter((collectibleHash: number) =>
-                  player.pullableNonExotics[slotHash].has(collectibleHash)
-                )
-              : []
-          );
-        });
-      });
+          players
+            .filter((p) => p.status === 'ready')
+            .forEach((player) => {
+              this.manifest.slotHashSet.forEach((slotHash) => {
+                this.combinedSets.intersection.exotics[slotHash] = new Set(
+                  player.exotics[slotHash]
+                    ? [
+                        ...this.combinedSets.intersection.exotics[slotHash],
+                      ].filter(
+                        (itemHash: number) =>
+                          player.exotics[slotHash].indexOf(itemHash) > -1
+                      )
+                    : []
+                );
+                this.combinedSets.intersection.nonExotics[slotHash] = new Set(
+                  player.nonExotics[slotHash]
+                    ? [
+                        ...this.combinedSets.intersection.nonExotics[slotHash],
+                      ].filter(
+                        (itemHash: number) =>
+                          player.nonExotics[slotHash].indexOf(itemHash) > 1
+                      )
+                    : []
+                );
+                this.combinedSets.intersection.pullableExotics[slotHash] =
+                  new Set(
+                    player.pullableExotics[slotHash]
+                      ? [
+                          ...this.combinedSets.intersection.pullableExotics[
+                            slotHash
+                          ],
+                        ].filter(
+                          (collectibleHash: number) =>
+                            player.pullableExotics[slotHash].indexOf(
+                              collectibleHash
+                            ) > -1
+                        )
+                      : []
+                  );
+                this.combinedSets.intersection.pullableNonExotics[slotHash] =
+                  new Set(
+                    player.pullableNonExotics[slotHash]
+                      ? [
+                          ...this.combinedSets.intersection.pullableNonExotics[
+                            slotHash
+                          ],
+                        ].filter(
+                          (collectibleHash: number) =>
+                            player.pullableNonExotics[slotHash].indexOf(
+                              collectibleHash
+                            ) > -1
+                        )
+                      : []
+                  );
+              });
+            });
 
-    this.combinedSetsLoading.next(false);
+          this.combinedSetsLoading.next(false);
+        })
+      )
+      .subscribe();
   }
 }
 
 export type DestinyPlayer = {
   name: string;
+  localPlayer?: boolean;
   nameCode?: number;
   possibleMemberships?: UserInfoCard[];
   membershipId: string;
@@ -490,15 +494,15 @@ export type DestinyPlayer = {
   suspectNonEquippedDisabled: boolean;
   suspectProgressionDisabled: boolean;
   exotics: {
-    [slotHash: number]: Set<number>;
+    [slotHash: number]: Array<number>;
   };
   nonExotics: {
-    [slotHash: number]: Set<number>;
+    [slotHash: number]: Array<number>;
   };
   pullableExotics: {
-    [slotHash: number]: Set<number>;
+    [slotHash: number]: Array<number>;
   };
   pullableNonExotics: {
-    [slotHash: number]: Set<number>;
+    [slotHash: number]: Array<number>;
   };
 };

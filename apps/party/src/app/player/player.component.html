@@ -1,10 +1,10 @@
-<mat-card class="player-card" *ngIf="player.status === 'loading'">
+<mat-card class="player-card" *ngIf="player?.status === 'loading'">
   <mat-spinner></mat-spinner>
 </mat-card>
-<mat-card class="player-card" *ngIf="player.status !== 'loading'">
+<mat-card class="player-card" *ngIf="player?.status !== 'loading'">
   <mat-card-header>
     <img
-      *ngIf="player.emblemPath"
+      *ngIf="player?.emblemPath"
       mat-card-avatar
       [src]="'https://www.bungie.net' + player.emblemPath"
       alt="emblem"
@@ -13,10 +13,10 @@
       {{ player.name }}<span class="nameCode">#{{ player.nameCode }}</span>
     </mat-card-title>
   </mat-card-header>
-  <mat-card-content *ngIf="player.status === 'chooseMembership'">
+  <mat-card-content *ngIf="player?.status === 'chooseMembership'">
     <mat-action-list>
       <mat-list-item
-        *ngFor="let membership of player.possibleMemberships"
+        *ngFor="let membership of player?.possibleMemberships"
         (click)="selectMembership(membership)"
       >
         <img
@@ -33,31 +33,31 @@
       </mat-list-item>
     </mat-action-list>
   </mat-card-content>
-  <mat-card-content *ngIf="player.status !== 'chooseMembership'">
-    <span *ngIf="player.status === 'erred'">Error loading Guardian</span>
+  <mat-card-content *ngIf="player?.status !== 'chooseMembership'">
+    <span *ngIf="player?.status === 'erred'">Error loading Guardian</span>
     <span
       *ngIf="
-        player.status === 'ready' &&
-        player.suspectNonEquippedDisabled &&
-        !player.suspectProgressionDisabled
+        player?.status === 'ready' &&
+        player?.suspectNonEquippedDisabled &&
+        !player?.suspectProgressionDisabled
       "
     >
       Vault inaccessible. Enable "Show my non-equipped Inventory" on Bungie.net
     </span>
     <span
       *ngIf="
-        player.status === 'ready' &&
-        player.suspectProgressionDisabled &&
-        !player.suspectNonEquippedDisabled
+        player?.status === 'ready' &&
+        player?.suspectProgressionDisabled &&
+        !player?.suspectNonEquippedDisabled
       "
     >
       Collections inaccessible. Enable "Show my progression" on Bungie.net
     </span>
     <span
       *ngIf="
-        player.status === 'ready' &&
-        player.suspectProgressionDisabled &&
-        player.suspectNonEquippedDisabled
+        player?.status === 'ready' &&
+        player?.suspectProgressionDisabled &&
+        player?.suspectNonEquippedDisabled
       "
     >
       Vault and Collections inaccessible. Enable "Show my non-equipped
@@ -66,7 +66,7 @@
   </mat-card-content>
 
   <mat-card-actions>
-    <mat-chip-set *ngIf="player.status === 'ready'">
+    <mat-chip-set *ngIf="player?.status === 'ready'">
       <mat-chip class="non-exotics">
         {{ getNonExoticCount() }}
       </mat-chip>
@@ -79,16 +79,9 @@
       (click)="refreshPlayer()"
       mat-icon-button
       aria-label="Refresh Player"
+      *ngIf="player?.localPlayer"
     >
       <mat-icon>refresh</mat-icon>
-    </button>
-    <button
-      (click)="removePlayer()"
-      mat-icon-button
-      color="warn"
-      aria-label="Remove Player"
-    >
-      <mat-icon>delete</mat-icon>
     </button>
   </mat-card-actions>
 </mat-card>
