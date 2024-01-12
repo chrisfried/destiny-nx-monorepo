@@ -5,9 +5,10 @@ import { BungieMembershipType } from 'bungie-api-ts/common';
 import {
   DestinyCollectibleState,
   DestinyComponentType,
-  DestinyProfileResponse,
   getProfile,
+  searchDestinyPlayerByBungieName,
 } from 'bungie-api-ts/destiny2';
+import { searchByGlobalNamePost } from 'bungie-api-ts/user';
 import {
   UserInfoCard,
   UserMembershipData,
@@ -21,8 +22,10 @@ import {
   lastValueFrom,
   map,
   take,
+  tap,
 } from 'rxjs';
 import { ManifestService } from '../manifest/manifest.service';
+import { P2PCFService } from '../p2pcf.service';
 
 @Injectable({
   providedIn: 'root',
@@ -70,29 +73,31 @@ export class PlayerService {
   ]);
   minPower = new BehaviorSubject(0);
   combinedSetsLoading = new BehaviorSubject(false);
-  localPlayerProfile$ = new BehaviorSubject<DestinyProfileResponse | null>(
-    null
-  );
   localPlayer$ = new BehaviorSubject<DestinyPlayer | null>(null);
   remotePlayers$ = new BehaviorSubject<DestinyPlayer[]>([]);
-  players$ = combineLatest([this.localPlayer$, this.remotePlayers$]).pipe(
-    map(([localPlayer, remotePlayers]) =>
-      localPlayer ? [localPlayer, ...remotePlayers] : remotePlayers
+  manualPlayers$ = new BehaviorSubject<DestinyPlayer[]>([]);
+  players$ = combineLatest([
+    this.localPlayer$,
+    this.remotePlayers$,
+    this.manualPlayers$,
+  ]).pipe(
+    map(([localPlayer, remotePlayers, manualPlayers]) =>
+      localPlayer
+        ? [localPlayer, ...remotePlayers, ...manualPlayers]
+        : [...remotePlayers, ...manualPlayers]
     )
   );
 
-  constructor(private http: HttpClient, private manifest: ManifestService) {
-    combineLatest([this.localPlayer$, this.remotePlayers$])
+  constructor(
+    private http: HttpClient,
+    private manifest: ManifestService,
+    private p2pcfService: P2PCFService
+  ) {
+    this.players$
       .pipe(
-        map(([localPlayer, remotePlayers]) => {
-          if (
-            localPlayer?.status === 'loading' ||
-            remotePlayers.filter((p) => p.status === 'loading').length > 0
-          ) {
-            this.combinedSetsLoading.next(true);
-          } else {
-            this.updateCombinedSets();
-          }
+        tap(() => {
+          this.combinedSetsLoading.next(true);
+          this.updateCombinedSets();
         })
       )
       .subscribe();
@@ -101,7 +106,7 @@ export class PlayerService {
   addLocalPlayer(membership: UserMembershipData) {
     const player: DestinyPlayer = {
       name: '',
-      localPlayer: true,
+      playerType: 'local',
       status: 'loading',
       membershipId: '',
       membershipType: BungieMembershipType.None,
@@ -146,7 +151,7 @@ export class PlayerService {
   }
 
   addRemotePlayer(player: DestinyPlayer) {
-    player.localPlayer = false;
+    player.playerType = 'remote';
     this.remotePlayers$
       .pipe(
         take(1),
@@ -162,13 +167,197 @@ export class PlayerService {
       .subscribe();
   }
 
-  removePlayer(membershipId: string) {
+  addManualPlayer(player: DestinyPlayer | string) {
+    if (typeof player === 'object') {
+      player.playerType = 'manual';
+      this.manualPlayers$
+        .pipe(
+          take(1),
+          map((manualPlayers) => {
+            this.manualPlayers$.next([
+              ...manualPlayers.filter(
+                (p) => p.membershipId !== player.membershipId
+              ),
+              player,
+            ]);
+          })
+        )
+        .subscribe();
+    }
+
+    if (typeof player === 'string') {
+      const p: DestinyPlayer = {
+        name: player,
+        playerType: 'manual',
+        status: 'loading',
+        membershipId: '',
+        membershipType: BungieMembershipType.None,
+        suspectNonEquippedDisabled: false,
+        suspectProgressionDisabled: false,
+        exotics: {},
+        nonExotics: {},
+        // types: {},
+        // archetypes: {},
+        pullableExotics: {},
+        pullableNonExotics: {},
+      };
+      this.manualPlayers$
+        .pipe(
+          take(1),
+          map((manualPlayers) => {
+            this.manualPlayers$.next([
+              ...manualPlayers.filter((m) => m.membershipId !== p.membershipId),
+              p,
+            ]);
+          })
+        )
+        .subscribe();
+      this.findDestinyMembership(p);
+    }
+  }
+
+  findDestinyMembership(player: DestinyPlayer) {
+    player.status = 'loading';
+    player.possibleMemberships = [];
+    if (player.name.indexOf('#') > -1) {
+      from(
+        searchDestinyPlayerByBungieName(
+          (config) =>
+            lastValueFrom(
+              this.http.request(config.method, config.url, {
+                params: config.params,
+                body: config.body,
+              })
+            ),
+          {
+            membershipType: BungieMembershipType.All,
+          },
+          {
+            displayName: player.name.split('#')[0],
+            displayNameCode: Number(player.name.split('#')[1]),
+          }
+        )
+      ).subscribe({
+        next: (res) => {
+          const memberships = res.Response.filter(
+            (p) => p.applicableMembershipTypes.length > 0
+          );
+
+          this.handleMemberships(player, memberships);
+        },
+        error: (err) => {
+          console.error(err);
+          player.status = 'erred';
+          this.manualPlayers$
+            .pipe(
+              take(1),
+              map((manualPlayers) => {
+                this.manualPlayers$.next([
+                  ...manualPlayers.filter(
+                    (p) => p.membershipId !== player.membershipId
+                  ),
+                  player,
+                ]);
+              })
+            )
+            .subscribe();
+        },
+      });
+    } else {
+      from(
+        searchByGlobalNamePost(
+          (config) =>
+            lastValueFrom(
+              this.http.request(config.method, config.url, {
+                params: config.params,
+                body: config.body,
+              })
+            ),
+          {
+            page: 0,
+          },
+          {
+            displayNamePrefix: player.name,
+          }
+        )
+      ).subscribe({
+        next: (res) => {
+          if (res.Response.searchResults.length < 1) {
+            player.status = 'erred';
+            this.manualPlayers$
+              .pipe(
+                take(1),
+                map((manualPlayers) => {
+                  this.manualPlayers$.next([
+                    ...manualPlayers.filter(
+                      (p) => p.membershipId !== player.membershipId
+                    ),
+                    player,
+                  ]);
+                })
+              )
+              .subscribe();
+          } else if (res.Response.searchResults.length > 1) {
+            const memberships = res.Response.searchResults.flatMap((result) =>
+              result.destinyMemberships.filter(
+                (mem) => mem.applicableMembershipTypes.length > 0
+              )
+            );
+            this.handleMemberships(player, memberships);
+          } else {
+            const memberships =
+              res.Response.searchResults[0].destinyMemberships.filter(
+                (p) => p.applicableMembershipTypes.length > 0
+              );
+
+            this.handleMemberships(player, memberships);
+          }
+        },
+        error: (err) => {
+          player.status = 'erred';
+        },
+      });
+    }
+  }
+
+  handleMemberships(player: DestinyPlayer, memberships: UserInfoCard[]) {
+    if (memberships.length < 1) {
+      player.status = 'erred';
+    } else if (memberships.length > 1) {
+      memberships.forEach((mem) => player.possibleMemberships?.push(mem));
+      player.status = 'chooseMembership';
+    } else {
+      const playerRes = memberships[0];
+
+      player.name = playerRes.bungieGlobalDisplayName;
+      player.nameCode = playerRes.bungieGlobalDisplayNameCode;
+      player.membershipId = playerRes.membershipId;
+      player.membershipType = playerRes.membershipType;
+
+      this.fetchWeapons(player);
+    }
+  }
+
+  removeRemotePlayer(membershipId: string) {
     this.remotePlayers$
       .pipe(
         take(1),
         map((remotePlayers) => {
           this.remotePlayers$.next(
             remotePlayers.filter((p) => p.membershipId !== membershipId)
+          );
+        })
+      )
+      .subscribe();
+  }
+
+  removeManualPlayer(membershipId: string) {
+    this.manualPlayers$
+      .pipe(
+        take(1),
+        map((manualPlayers) => {
+          this.manualPlayers$.next(
+            manualPlayers.filter((p) => p.membershipId !== membershipId)
           );
         })
       )
@@ -186,7 +375,28 @@ export class PlayerService {
     player.pullableExotics = {};
     player.pullableNonExotics = {};
 
-    this.localPlayer$.next(player);
+    if (player.playerType === 'local') {
+      this.localPlayer$.next(player);
+    } else {
+      this.p2pcfService.p2pcf?.broadcast(
+        new TextEncoder().encode(
+          JSON.stringify({ type: 'manualPlayer', body: player })
+        )
+      );
+      this.manualPlayers$
+        .pipe(
+          take(1),
+          map((manualPlayers) => {
+            this.manualPlayers$.next([
+              ...manualPlayers.filter(
+                (p) => p.membershipId !== player.membershipId
+              ),
+              player,
+            ]);
+          })
+        )
+        .subscribe();
+    }
 
     from(
       getProfile(
@@ -213,7 +423,6 @@ export class PlayerService {
     )
       .pipe(
         map((res) => {
-          this.localPlayerProfile$.next(res.Response);
           const charactersData = res.Response.characters.data;
           if (charactersData) {
             const keys = Object.keys(charactersData);
@@ -304,7 +513,28 @@ export class PlayerService {
           }
 
           player.status = 'ready';
-          this.localPlayer$.next(player);
+          if (player.playerType === 'local') {
+            this.localPlayer$.next(player);
+          } else {
+            this.p2pcfService.p2pcf?.broadcast(
+              new TextEncoder().encode(
+                JSON.stringify({ type: 'manualPlayer', body: player })
+              )
+            );
+            this.manualPlayers$
+              .pipe(
+                take(1),
+                map((manualPlayers) => {
+                  this.manualPlayers$.next([
+                    ...manualPlayers.filter(
+                      (p) => p.membershipId !== player.membershipId
+                    ),
+                    player,
+                  ]);
+                })
+              )
+              .subscribe();
+          }
         }),
         catchError((err, caught) => {
           console.error(err);
@@ -482,7 +712,7 @@ export class PlayerService {
 
 export type DestinyPlayer = {
   name: string;
-  localPlayer?: boolean;
+  playerType: 'local' | 'remote' | 'manual';
   nameCode?: number;
   possibleMemberships?: UserInfoCard[];
   membershipId: string;

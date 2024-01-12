@@ -39,8 +39,10 @@ import { BungieAuthModule } from './bungie-auth/bungie-auth.module';
 import { BungieAuthService } from './bungie-auth/bungie-auth.service';
 import { BungieStatusComponent } from './bungie-status/bungie-status.component';
 import { ManifestService } from './manifest/manifest.service';
+import { P2PCFService } from './p2pcf.service';
 import { PlayerComponent } from './player/player.component';
 import { PlayerService } from './player/player.service';
+import { TimeAgoPipe } from './timeAgo.pipe';
 import {
   WebringComponent,
   WebringSheetComponent,
@@ -71,6 +73,7 @@ import {
     WebringSheetComponent,
     BungieAuthModule,
     BungieStatusComponent,
+    TimeAgoPipe,
   ],
 })
 export class AppComponent {
@@ -92,9 +95,10 @@ export class AppComponent {
   weaponCount = 0;
   exoticCount = 0;
   nonExoticCount = 0;
-  p2pcf: any;
   joinedRoom = false;
   currentLoadout: DestinyInventoryItemDefinition[] = [];
+  lastLoadout = new Date();
+  showCode = false;
 
   localMembership?: UserMembershipData;
 
@@ -103,7 +107,8 @@ export class AppComponent {
     private manifestService: ManifestService,
     private clipboard: Clipboard,
     private http: HttpClient,
-    public bungieAuth: BungieAuthService
+    public bungieAuth: BungieAuthService,
+    private p2pcfService: P2PCFService
   ) {
     this.manifestService.state$.subscribe(
       (state) => (this.manifestState = state)
@@ -148,7 +153,7 @@ export class AppComponent {
     this.playerService.localPlayer$
       .pipe(
         map((player) => {
-          this.p2pcf?.broadcast(
+          this.p2pcfService.p2pcf?.broadcast(
             new TextEncoder().encode(
               JSON.stringify({ type: 'player', body: player })
             )
@@ -175,7 +180,6 @@ export class AppComponent {
     this.startP2pcf();
   }
 
-
   newRoom() {
     this.joinedRoom = true;
 
@@ -191,7 +195,7 @@ export class AppComponent {
   }
 
   startP2pcf() {
-    this.p2pcf = new P2PCF(
+    this.p2pcfService.p2pcf = new P2PCF(
       this.localMembership?.primaryMembershipId ??
         this.localMembership?.destinyMemberships[0].membershipId,
       `d2srl-${this.roomCode}`,
@@ -200,9 +204,9 @@ export class AppComponent {
       }
     );
 
-    this.p2pcf.start();
+    this.p2pcfService.p2pcf.start();
 
-    this.p2pcf.on('peerconnect', (peer: any) => {
+    this.p2pcfService.p2pcf.on('peerconnect', (peer: any) => {
       // New peer connected
 
       // Peer is an instance of simple-peer (https://github.com/feross/simple-peer)
@@ -214,42 +218,73 @@ export class AppComponent {
         .pipe(
           take(1),
           map((player) => {
-            this.p2pcf?.broadcast(
+            this.p2pcfService.p2pcf?.send(
+              peer,
               new TextEncoder().encode(
                 JSON.stringify({ type: 'player', body: player })
               )
             );
-            if (this.searchText || this.currentLoadout.length > 0) {
-              this.p2pcf?.broadcast(
-                new TextEncoder().encode(
-                  JSON.stringify({
-                    type: 'loadout',
-                    body: this.searchText,
-                    loadout: this.currentLoadout,
-                  })
-                )
-              );
-            }
           })
         )
         .subscribe();
+      this.playerService.manualPlayers$
+        .pipe(
+          take(1),
+          map((players) => {
+            players
+              .filter((p) => p.status === 'ready')
+              .forEach((player) => {
+                this.p2pcfService.p2pcf?.send(
+                  peer,
+                  new TextEncoder().encode(
+                    JSON.stringify({ type: 'manualPlayer', body: player })
+                  )
+                );
+              });
+          })
+        )
+        .subscribe();
+      if (this.searchText || this.currentLoadout.length > 0) {
+        this.p2pcfService.p2pcf?.send(
+          peer,
+          new TextEncoder().encode(
+            JSON.stringify({
+              type: 'loadout',
+              body: this.searchText,
+              loadout: this.currentLoadout,
+            })
+          )
+        );
+      }
     });
 
-    this.p2pcf.on('peerclose', (peer: any) => {
+    this.p2pcfService.p2pcf.on('peerclose', (peer: any) => {
       // Peer has disconnected
-      this.playerService.removePlayer(peer.client_id);
+      this.playerService.removeRemotePlayer(peer.client_id);
     });
 
-    this.p2pcf.on('msg', (peer: any, data: any) => {
+    this.p2pcfService.p2pcf.on('msg', (peer: any, data: any) => {
       const msg = JSON.parse(new TextDecoder('utf-8').decode(data));
       if (msg.type === 'loadout') {
         this.searchText = msg.body;
         this.currentLoadout = msg.loadout;
+        this.lastLoadout = new Date();
       }
       if (msg.type === 'player') {
         this.playerService.addRemotePlayer(msg.body);
       }
+      if (msg.type === 'manualPlayer') {
+        this.playerService.addManualPlayer(msg.body);
+      }
+      if (msg.type === 'removeManualPlayer') {
+        this.playerService.removeManualPlayer(msg.body);
+      }
     });
+  }
+
+  addManualPlayer() {
+    this.playerService.addManualPlayer(this.nameInput);
+    this.nameInput = '';
   }
 
   leaveRoom() {
@@ -406,16 +441,10 @@ export class AppComponent {
           .split(' (')[0]
           .split('_v1')[0];
 
-        const hashes =
-          splitName && this.manifestService.nonExoticNameLookup[splitName]
-            ? [...this.manifestService.nonExoticNameLookup[splitName]]
-            : [item.hash];
-
-        return `(${
-          splitName ? splitName : item.displayProperties.name
-        } (${hashes.map((hash) => `hash:${hash}`).join(' OR ')}))`;
+        return `name:"${splitName ? splitName : item.displayProperties.name}"`;
       })
       .join(' OR ');
+    this.searchText = `(${this.searchText}) AND is:weapon`;
 
     this.clipboard.copy(this.searchText);
     if (this.discordWebhookUrl) {
@@ -429,7 +458,9 @@ export class AppComponent {
         .subscribe();
     }
 
-    this.p2pcf.broadcast(
+    this.lastLoadout = new Date();
+
+    this.p2pcfService.p2pcf.broadcast(
       new TextEncoder().encode(
         JSON.stringify({
           type: 'loadout',

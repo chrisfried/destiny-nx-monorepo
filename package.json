@@ -10,7 +10,7 @@
     "build": "nx build",
     "test": "nx test",
     "predeploy:party": "nx build party --prod",
-    "deploy:party": "npm run predeploy:party && echo d2srl.club > ./dist/apps/party/CNAME && gh-pages -d dist/apps/party -o party"
+    "deploy:party": "npm run predeploy:party && echo d2srl.club > ./dist/apps/party/CNAME && gh-pages -d dist/apps/party -o party2"
   },
   "private": true,
   "dependencies": {
@@ -60,7 +60,7 @@
     "eslint": "8.15.0",
     "eslint-config-prettier": "8.1.0",
     "eslint-plugin-cypress": "^2.10.3",
-    "gh-pages": "^4.0.0",
+    "gh-pages": "^6.1.1",
     "jest": "28.1.1",
     "jest-environment-jsdom": "28.1.1",
     "jest-preset-angular": "12.2.3",

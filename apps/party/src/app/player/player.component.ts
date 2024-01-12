@@ -9,6 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { getCollectibleDef } from '@d2api/manifest';
 import { UserInfoCard } from 'bungie-api-ts/user/interfaces';
 import { ManifestService } from '../manifest/manifest.service';
+import { P2PCFService } from '../p2pcf.service';
 import { DestinyPlayer, PlayerService } from './player.service';
 @Component({
   selector: 'destiny-player',
@@ -34,12 +35,27 @@ export class PlayerComponent {
 
   constructor(
     private playerService: PlayerService,
-    private manifestService: ManifestService
+    private manifestService: ManifestService,
+    private p2pcfService: P2PCFService
   ) {}
 
   refreshPlayer() {
     if (this.player) {
       this.playerService.fetchWeapons(this.player);
+    }
+  }
+
+  removePlayer() {
+    if (this.player) {
+      this.p2pcfService.p2pcf?.broadcast(
+        new TextEncoder().encode(
+          JSON.stringify({
+            type: 'removeManualPlayer',
+            body: this.player.membershipId,
+          })
+        )
+      );
+      this.playerService.removeManualPlayer(this.player.membershipId);
     }
   }
 

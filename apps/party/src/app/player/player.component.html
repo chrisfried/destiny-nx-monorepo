@@ -12,6 +12,15 @@
     <mat-card-title>
       {{ player.name }}<span class="nameCode">#{{ player.nameCode }}</span>
     </mat-card-title>
+    <mat-card-subtitle>
+      {{
+        player.playerType === 'local'
+          ? 'You'
+          : player.playerType === 'remote'
+          ? 'Connected'
+          : 'Manually Added'
+      }}
+    </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content *ngIf="player?.status === 'chooseMembership'">
     <mat-action-list>
@@ -79,9 +88,18 @@
       (click)="refreshPlayer()"
       mat-icon-button
       aria-label="Refresh Player"
-      *ngIf="player?.localPlayer"
+      *ngIf="player?.playerType !== 'remote'"
     >
       <mat-icon>refresh</mat-icon>
+    </button>
+    <button
+      (click)="removePlayer()"
+      mat-icon-button
+      color="warn"
+      aria-label="Remove Player"
+      *ngIf="player?.playerType === 'manual'"
+    >
+      <mat-icon>delete</mat-icon>
     </button>
   </mat-card-actions>
 </mat-card>
