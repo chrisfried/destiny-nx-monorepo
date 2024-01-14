@@ -35,6 +35,7 @@ import {
   take,
   tap,
 } from 'rxjs';
+import { environment } from '../environments/environment';
 import { BungieAuthModule } from './bungie-auth/bungie-auth.module';
 import { BungieAuthService } from './bungie-auth/bungie-auth.service';
 import { BungieStatusComponent } from './bungie-status/bungie-status.component';
@@ -201,6 +202,31 @@ export class AppComponent {
       `d2srl-${this.roomCode}`,
       {
         workerUrl: 'https://p2pcf.chrisfried.workers.dev/',
+        turnIceServers: [
+          {
+            urls: 'stun:stun.relay.metered.ca:80',
+          },
+          {
+            urls: 'turn:standard.relay.metered.ca:80',
+            username: environment.turn.username,
+            credential: environment.turn.credential,
+          },
+          {
+            urls: 'turn:standard.relay.metered.ca:80?transport=tcp',
+            username: environment.turn.username,
+            credential: environment.turn.credential,
+          },
+          {
+            urls: 'turn:standard.relay.metered.ca:443',
+            username: environment.turn.username,
+            credential: environment.turn.credential,
+          },
+          {
+            urls: 'turns:standard.relay.metered.ca:443?transport=tcp',
+            username: environment.turn.username,
+            credential: environment.turn.credential,
+          },
+        ],
       }
     );
 
@@ -250,8 +276,7 @@ export class AppComponent {
           new TextEncoder().encode(
             JSON.stringify({
               type: 'loadout',
-              body: this.searchText,
-              loadout: this.currentLoadout,
+              body: this.currentLoadout,
             })
           )
         );
@@ -266,8 +291,20 @@ export class AppComponent {
     this.p2pcfService.p2pcf.on('msg', (peer: any, data: any) => {
       const msg = JSON.parse(new TextDecoder('utf-8').decode(data));
       if (msg.type === 'loadout') {
-        this.searchText = msg.body;
-        this.currentLoadout = msg.loadout;
+        this.currentLoadout = msg.body.map(
+          (i: DestinyInventoryItemDefinition) => getInventoryItemDef(i.hash)
+        );
+        this.searchText = `(${this.currentLoadout
+          .map((item) => {
+            const splitName = item?.displayProperties.name
+              .split(' (')[0]
+              .split('_v1')[0];
+
+            return `name:"${
+              splitName ? splitName : item?.displayProperties.name
+            }"`;
+          })
+          .join(' OR ')}) AND is:weapon`;
         this.lastLoadout = new Date();
       }
       if (msg.type === 'player') {
@@ -435,7 +472,7 @@ export class AppComponent {
       }
     });
 
-    this.searchText = this.currentLoadout
+    this.searchText = `(${this.currentLoadout
       .map((item) => {
         const splitName = item.displayProperties.name
           .split(' (')[0]
@@ -443,8 +480,7 @@ export class AppComponent {
 
         return `name:"${splitName ? splitName : item.displayProperties.name}"`;
       })
-      .join(' OR ');
-    this.searchText = `(${this.searchText}) AND is:weapon`;
+      .join(' OR ')}) AND is:weapon`;
 
     this.clipboard.copy(this.searchText);
     if (this.discordWebhookUrl) {
@@ -464,8 +500,7 @@ export class AppComponent {
       new TextEncoder().encode(
         JSON.stringify({
           type: 'loadout',
-          body: this.searchText,
-          loadout: this.currentLoadout,
+          body: this.currentLoadout,
         })
       )
     );
