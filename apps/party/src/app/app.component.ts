@@ -190,6 +190,7 @@ export class AppComponent {
       code += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     this.roomCode = code;
+    this.copyCode();
 
     this.startP2pcf();
   }
@@ -446,7 +447,7 @@ export class AppComponent {
       .join(' OR ');
     this.searchText = `(${this.searchText}) AND is:weapon`;
 
-    this.clipboard.copy(this.searchText);
+    this.copySearch();
     if (this.discordWebhookUrl) {
       const url = this.discordThreadId
         ? `${this.discordWebhookUrl}?thread_id=${this.discordThreadId}`
