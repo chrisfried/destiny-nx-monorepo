@@ -5,9 +5,14 @@ import {
   getInventoryItemDef,
   getPresentationNodeDef,
 } from '@d2api/manifest';
-import { includeTables, loadDefs, setApiKey } from '@d2api/manifest-web';
+import {
+  includeTables,
+  loadDefs,
+  setApiKey,
+  setLanguage,
+} from '@d2api/manifest-web';
 import { getCommonSettings } from 'bungie-api-ts/core';
-import { DestinyClass } from 'bungie-api-ts/destiny2';
+import { DestinyClass, destinyManifestLanguages } from 'bungie-api-ts/destiny2';
 import { BehaviorSubject, EMPTY, from, lastValueFrom } from 'rxjs';
 import {
   catchError,
@@ -50,6 +55,12 @@ export class ManifestService {
   } = {};
 
   constructor(private http: HttpClient) {
+    setLanguage(
+      destinyManifestLanguages.find(
+        (l) =>
+          l === navigator.language || l === navigator.language.split('-')[0]
+      ) ?? 'en'
+    );
     setApiKey(environment.bungie.apiKey);
     includeTables([
       'Collectible',
