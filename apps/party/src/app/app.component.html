@@ -143,6 +143,10 @@
           [title]="item.displayProperties.name"
         >
           <img
+            [src]="'https://bungie.net' + item.iconWatermark"
+            class="item-watermark"
+          />
+          <img
             [src]="'https://bungie.net' + item.displayProperties.icon"
             class="item-icon"
           />

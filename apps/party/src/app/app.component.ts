@@ -271,13 +271,14 @@ export class AppComponent {
           })
         )
         .subscribe();
-      if (this.searchText || this.currentLoadout.length > 0) {
+      if (this.currentLoadout.length > 0) {
         this.p2pcfService.p2pcf?.send(
           peer,
           new TextEncoder().encode(
             JSON.stringify({
               type: 'loadout',
               body: this.currentLoadout,
+              timestamp: this.lastLoadout.toISOString(),
             })
           )
         );
@@ -295,18 +296,8 @@ export class AppComponent {
         this.currentLoadout = msg.body.map(
           (i: DestinyInventoryItemDefinition) => getInventoryItemDef(i.hash)
         );
-        this.searchText = `(${this.currentLoadout
-          .map((item) => {
-            const splitName = item?.displayProperties.name
-              .split(' (')[0]
-              .split('_v1')[0];
-
-            return `name:"${
-              splitName ? splitName : item?.displayProperties.name
-            }"`;
-          })
-          .join(' OR ')}) AND is:weapon`;
-        this.lastLoadout = new Date();
+        this.searchText = this.generateSearchText(this.currentLoadout);
+        this.lastLoadout = new Date(msg.timestamp);
       }
       if (msg.type === 'player') {
         this.playerService.addRemotePlayer(msg.body);
@@ -318,6 +309,17 @@ export class AppComponent {
         this.playerService.removeManualPlayer(msg.body);
       }
     });
+  }
+
+  generateSearchText(loadout: DestinyInventoryItemDefinition[]) {
+    const names = Array.from(
+      new Set(loadout.map((item) => item.displayProperties.name))
+    );
+    const hashes = Array.from(new Set(loadout.map((item) => item.hash)));
+
+    return `(${names.map((name) => `name:"${name}"`).join(' OR ')} OR ${hashes
+      .map((hash) => `hash:"${hash}"`)
+      .join(' OR ')}) AND is:weapon`;
   }
 
   addManualPlayer() {
@@ -463,7 +465,35 @@ export class AppComponent {
       const item = getInventoryItemDef(itemHash);
 
       if (item) {
-        this.currentLoadout.push(item);
+        const splitName = item.displayProperties.name
+          .split(' (')[0]
+          .split('_v1')[0];
+
+        let hashes = [item.hash];
+
+        if (splitName && this.manifestService.nonExoticNameLookup[splitName]) {
+          hashes = [
+            ...hashes,
+            ...this.manifestService.nonExoticNameLookup[splitName],
+          ];
+        }
+
+        if (splitName && this.manifestService.exoticNameLookup[splitName]) {
+          hashes = [
+            ...hashes,
+            ...this.manifestService.exoticNameLookup[splitName],
+          ];
+        }
+
+        hashes = Array.from(new Set(hashes));
+
+        hashes.forEach((hash) => {
+          const item = getInventoryItemDef(hash);
+          if (item) {
+            this.currentLoadout.push(item);
+          }
+        });
+
         if (item.equippingBlock?.ammoType === DestinyAmmunitionType.Primary) {
           requirePrimary = false;
         }
@@ -473,15 +503,7 @@ export class AppComponent {
       }
     });
 
-    this.searchText = `(${this.currentLoadout
-      .map((item) => {
-        const splitName = item.displayProperties.name
-          .split(' (')[0]
-          .split('_v1')[0];
-
-        return `name:"${splitName ? splitName : item.displayProperties.name}"`;
-      })
-      .join(' OR ')}) AND is:weapon`;
+    this.searchText = this.generateSearchText(this.currentLoadout);
 
     this.copySearch();
     if (this.discordWebhookUrl) {
@@ -502,6 +524,7 @@ export class AppComponent {
         JSON.stringify({
           type: 'loadout',
           body: this.currentLoadout,
+          timestamp: this.lastLoadout.toISOString(),
         })
       )
     );

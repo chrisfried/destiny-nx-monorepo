@@ -35,6 +35,9 @@ export class ManifestService {
   exoticLookup: {
     [slotHash: number]: Set<number>;
   } = {};
+  exoticNameLookup: {
+    [name: string]: Set<number>;
+  } = {};
   nonExoticLookup: {
     [slotHash: number]: Set<number>;
   } = {};
@@ -136,6 +139,16 @@ export class ManifestService {
                     this.ammoTypeLookup[ammoType]
                       ? this.ammoTypeLookup[ammoType].add(item.hash)
                       : (this.ammoTypeLookup[ammoType] = new Set([item.hash]));
+
+                    const splitName = item.displayProperties.name
+                      .split(' (')[0]
+                      .split('_v1')[0];
+
+                    this.exoticNameLookup[splitName]
+                      ? this.exoticNameLookup[splitName].add(item.hash)
+                      : (this.exoticNameLookup[splitName] = new Set([
+                          item.hash,
+                        ]));
 
                     if (
                       collectible?.acquisitionInfo
