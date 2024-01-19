@@ -13,11 +13,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
+import { MatSelectModule } from '@angular/material/select';
 import { getCollectibleDef, getInventoryItemDef } from '@d2api/manifest';
 import { getEquipmentSlotDef } from '@d2api/manifest-web';
 import {
   DestinyAmmunitionType,
   DestinyInventoryItemDefinition,
+  DestinyManifestLanguage,
+  destinyManifestLanguages,
 } from 'bungie-api-ts/destiny2';
 import {
   UserMembershipData,
@@ -55,8 +58,8 @@ import {
   styleUrls: ['./app.component.scss'],
   standalone: true,
   imports: [
-    ClipboardModule,
     CommonModule,
+    ClipboardModule,
     FormsModule,
     HttpClientModule,
     MatButtonModule,
@@ -67,6 +70,7 @@ import {
     MatIconModule,
     MatInputModule,
     MatRadioModule,
+    MatSelectModule,
     PlayerComponent,
     MatCheckboxModule,
     MatProgressSpinnerModule,
@@ -78,30 +82,49 @@ import {
   ],
 })
 export class AppComponent {
-  randomizationType: 'weaponSet' | 'archetypeSet' | 'typeSet' = 'weaponSet';
-  exotics: 'exclude' | 'include' | 'required' = 'include';
+  // randomizationType: 'weaponSet' | 'archetypeSet' | 'typeSet' = 'weaponSet';
+  exotics: 'exclude' | 'include' | 'required' =
+    (localStorage.getItem('exotics') as 'exclude' | 'include' | 'required') ??
+    'include';
   intersection;
   searchText = '';
-  minPower = 0;
-  discordWebhookUrl = '';
-  discordThreadId = '';
-  manifestState = 'loading';
+  // minPower = 0;
+  discordWebhookUrl = localStorage.getItem('discordWebhookUrl') ?? '';
+  discordThreadId = localStorage.getItem('discordThreadId') ?? '';
+  discordMessageId = '';
+  discordCleanUp = JSON.parse(
+    localStorage.getItem('discordCleanUp') ?? 'false'
+  );
+  manifestState = this.manifestService.state$;
   nameInput = '';
-  roomCode = '';
-  collectionExotics = false;
-  collectionNonExotics = false;
+  roomCode = localStorage.getItem('roomCode') ?? '';
+  collectionExotics: boolean = JSON.parse(
+    localStorage.getItem('collectionExotics') ?? 'false'
+  );
+  collectionNonExotics: boolean = JSON.parse(
+    localStorage.getItem('collectionNonExotics') ?? 'false'
+  );
   requiresPull = false;
-  requirePrimary = false;
-  requireSpecial = false;
+  requirePrimary: boolean = JSON.parse(
+    localStorage.getItem('requirePrimary') ?? 'false'
+  );
+  requireSpecial: boolean = JSON.parse(
+    localStorage.getItem('requireSpecial') ?? 'false'
+  );
   weaponCount = 0;
   exoticCount = 0;
   nonExoticCount = 0;
-  joinedRoom = false;
+  joinedRoom = !!localStorage.getItem('roomCode');
   currentLoadout: DestinyInventoryItemDefinition[] = [];
   lastLoadout = new Date();
   showCode = false;
 
   localMembership?: UserMembershipData;
+
+  destinyManifestLanguages = destinyManifestLanguages;
+  language$ = this.manifestService.language$;
+
+  hideAwait = false;
 
   constructor(
     public playerService: PlayerService,
@@ -111,9 +134,6 @@ export class AppComponent {
     public bungieAuth: BungieAuthService,
     private p2pcfService: P2PCFService
   ) {
-    this.manifestService.state$.subscribe(
-      (state) => (this.manifestState = state)
-    );
     this.bungieAuth.hasValidAccessToken$
       .pipe(
         switchMap((hasToken) => {
@@ -135,11 +155,15 @@ export class AppComponent {
         map((res) => {
           this.localMembership = res.Response;
           this.playerService.addLocalPlayer(this.localMembership);
+
+          if (this.roomCode) {
+            this.joinRoom();
+          }
         })
       )
       .subscribe();
     this.intersection = this.playerService.combinedSets.intersection;
-    this.playerService.minPower.subscribe((value) => (this.minPower = value));
+    // this.playerService.minPower.subscribe((value) => (this.minPower = value));
     this.playerService.combinedSetsLoading
       .pipe(
         distinctUntilChanged(),
@@ -162,6 +186,24 @@ export class AppComponent {
         })
       )
       .subscribe();
+
+    this.manifestService.state$.subscribe((state) => {
+      if (state === 'ready' && this.currentLoadout.length) {
+        this.currentLoadout = this.currentLoadout.map(
+          (item) => getInventoryItemDef(item.hash) ?? item
+        );
+        this.searchText = this.generateSearchText(this.currentLoadout);
+      }
+    });
+  }
+
+  setLanguage(language: DestinyManifestLanguage) {
+    this.manifestService.language$.next(language);
+  }
+
+  storeValue(store: string, value: any) {
+    localStorage.setItem(store, value);
+    this.updateCounts();
   }
 
   login(): void {
@@ -176,6 +218,7 @@ export class AppComponent {
     this.currentLoadout = [];
     this.searchText = '';
     this.roomCode = this.roomCode.toUpperCase();
+    localStorage.setItem('roomCode', this.roomCode);
     this.joinedRoom = true;
 
     this.startP2pcf();
@@ -191,6 +234,7 @@ export class AppComponent {
       code += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     this.roomCode = code;
+    localStorage.setItem('roomCode', this.roomCode);
     this.copyCode();
 
     this.startP2pcf();
@@ -315,10 +359,9 @@ export class AppComponent {
     const names = Array.from(
       new Set(loadout.map((item) => item.displayProperties.name))
     );
-    const hashes = Array.from(new Set(loadout.map((item) => item.hash)));
 
-    return `(${names.map((name) => `name:"${name}"`).join(' OR ')} OR ${hashes
-      .map((hash) => `hash:"${hash}"`)
+    return `(${names
+      .map((name) => `name:"${name}"`)
       .join(' OR ')}) AND is:weapon`;
   }
 
@@ -328,6 +371,7 @@ export class AppComponent {
   }
 
   leaveRoom() {
+    localStorage.removeItem('roomCode');
     location.reload();
   }
 
@@ -507,19 +551,28 @@ export class AppComponent {
 
     this.copySearch();
     if (this.discordWebhookUrl) {
+      if (this.discordMessageId && this.discordCleanUp) {
+        this.http
+          .delete(`${this.discordWebhookUrl}/messages/${this.discordMessageId}`)
+          .subscribe(() => {
+            this.discordMessageId = '';
+          });
+      }
       const url = this.discordThreadId
-        ? `${this.discordWebhookUrl}?thread_id=${this.discordThreadId}`
-        : this.discordWebhookUrl;
+        ? `${this.discordWebhookUrl}?wait=true&thread_id=${this.discordThreadId}`
+        : `${this.discordWebhookUrl}?wait=true`;
       this.http
         .post(url, {
           content: `\`\`\`${this.searchText}\`\`\``,
         })
-        .subscribe();
+        .subscribe((res) => {
+          this.discordMessageId = (res as any).id;
+        });
     }
 
     this.lastLoadout = new Date();
 
-    this.p2pcfService.p2pcf.broadcast(
+    this.p2pcfService.p2pcf?.broadcast(
       new TextEncoder().encode(
         JSON.stringify({
           type: 'loadout',

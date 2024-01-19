@@ -8,7 +8,12 @@ export const environment = {
     apiKey: '2cbdc69e9a224c2182f5860de312d778',
     authUrl: 'https://www.bungie.net/en/OAuth/Authorize',
     clientId: '36110',
+    clientSecret: 'tcrIbt-EhSqtWN8joYh.XpezwbfO2-K8bm3nv.r0RL4',
     redirect: 'https://localhost:4200',
+  },
+  turn: {
+    username: 'a063f6846bc232fbfbb91479',
+    credential: 'Klw2Mttx438HCeMH',
   },
 };
 

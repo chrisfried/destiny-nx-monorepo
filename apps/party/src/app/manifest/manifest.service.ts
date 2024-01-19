@@ -12,7 +12,11 @@ import {
   setLanguage,
 } from '@d2api/manifest-web';
 import { getCommonSettings } from 'bungie-api-ts/core';
-import { DestinyClass, destinyManifestLanguages } from 'bungie-api-ts/destiny2';
+import {
+  DestinyClass,
+  DestinyManifestLanguage,
+  destinyManifestLanguages,
+} from 'bungie-api-ts/destiny2';
 import { BehaviorSubject, EMPTY, from, lastValueFrom } from 'rxjs';
 import {
   catchError,
@@ -30,6 +34,15 @@ export class ManifestService {
     'loading'
   );
   state$ = new BehaviorSubject<'loading' | 'ready' | 'erred'>('loading');
+
+  language$ = new BehaviorSubject<DestinyManifestLanguage>(
+    (localStorage.getItem('language') as DestinyManifestLanguage) ??
+      destinyManifestLanguages.find(
+        (l) =>
+          l === navigator.language || l === navigator.language.split('-')[0]
+      ) ??
+      'en'
+  );
 
   slotHashSet = new Set<number>();
   exoticLookup: {
@@ -58,12 +71,6 @@ export class ManifestService {
   } = {};
 
   constructor(private http: HttpClient) {
-    setLanguage(
-      destinyManifestLanguages.find(
-        (l) =>
-          l === navigator.language || l === navigator.language.split('-')[0]
-      ) ?? 'en'
-    );
     setApiKey(environment.bungie.apiKey);
     includeTables([
       'Collectible',
@@ -73,7 +80,13 @@ export class ManifestService {
       'EquipmentSlot',
     ]);
 
-    this.loadManifest();
+    this.language$.pipe(distinctUntilChanged()).subscribe((language) => {
+      this.manifestState$.next('loading');
+      this.state$.next('loading');
+      localStorage.setItem('language', language);
+      setLanguage(language);
+      this.loadManifest();
+    });
 
     this.manifestState$
       .pipe(

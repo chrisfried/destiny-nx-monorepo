@@ -81,6 +81,12 @@ ol li {
 
 .mat-mdc-card-actions {
   gap: 0.5em;
+  white-space: nowrap;
+  display: flex;
+
+  .spacer {
+    flex: 1;
+  }
 }
 
 .code-block {
@@ -97,6 +103,12 @@ form {
 
 mat-spinner {
   margin: auto;
+
+  &.mat-mdc-card-avatar {
+    margin: 0;
+    height: 40px !important;
+    width: 40px !important;
+  }
 }
 
 .items {

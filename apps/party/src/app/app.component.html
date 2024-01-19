@@ -36,7 +36,8 @@
 
   <mat-card
     *ngIf="
-      (bungieAuth.hasValidAccessToken$ | async) && manifestState === 'ready'
+      (bungieAuth.hasValidAccessToken$ | async) &&
+      (manifestState | async) === 'ready'
     "
   >
     <mat-card-content>
@@ -114,9 +115,9 @@
     </mat-card-actions>
   </mat-card>
 
-  <mat-spinner *ngIf="manifestState === 'loading'"></mat-spinner>
+  <mat-spinner *ngIf="(manifestState | async) === 'loading'"></mat-spinner>
 
-  <div class="section" *ngIf="manifestState === 'erred'">
+  <div class="section" *ngIf="(manifestState | async) === 'erred'">
     Error loading Destiny Manifest
   </div>
 
@@ -124,7 +125,7 @@
     class="section"
     *ngIf="
       (bungieAuth.hasValidAccessToken$ | async) &&
-      manifestState === 'ready' &&
+      (manifestState | async) === 'ready' &&
       joinedRoom
     "
   >
@@ -189,7 +190,7 @@
     class="section"
     *ngIf="
       (bungieAuth.hasValidAccessToken$ | async) &&
-      manifestState === 'ready' &&
+      (manifestState | async) === 'ready' &&
       joinedRoom
     "
   >
@@ -215,6 +216,22 @@
         [collectionExotics]="collectionExotics"
         [collectionNonExotics]="collectionNonExotics"
       ></destiny-player>
+
+      <mat-card
+        *ngIf="(playerService.remotePlayers$ | async)!.length < 1 && !hideAwait"
+      >
+        <mat-card-header>
+          <mat-spinner mat-card-avatar></mat-spinner>
+          <mat-card-subtitle>Awaiting connections...</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content></mat-card-content>
+        <mat-card-actions>
+          <div class="spacer"></div>
+          <button (click)="hideAwait = true" mat-icon-button aria-label="Hide">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-card-actions>
+      </mat-card>
 
       <mat-card *ngIf="playerService.combinedSetsLoading | async">
         <mat-spinner></mat-spinner>
@@ -242,11 +259,11 @@
     class="section"
     *ngIf="
       (bungieAuth.hasValidAccessToken$ | async) &&
-      manifestState === 'ready' &&
+      (manifestState | async) === 'ready' &&
       joinedRoom
     "
   >
-    <h2>Loadout Options</h2>
+    <h2>Options</h2>
 
     <div class="option-cards">
       <mat-card>
@@ -257,7 +274,7 @@
           <mat-radio-group
             aria-label="Exotics"
             [(ngModel)]="exotics"
-            (change)="updateCounts()"
+            (change)="storeValue('exotics', exotics)"
           >
             <mat-radio-button value="exclude">Never</mat-radio-button>
             <mat-radio-button value="include" [checked]="true"
@@ -273,9 +290,16 @@
           ><mat-card-title>Require Ammo Type</mat-card-title></mat-card-header
         >
         <mat-card-content>
-          <mat-checkbox [(ngModel)]="requirePrimary">Primary</mat-checkbox
+          <mat-checkbox
+            [(ngModel)]="requirePrimary"
+            (change)="storeValue('requirePrimary', requirePrimary)"
+            >Primary</mat-checkbox
           ><br />
-          <mat-checkbox [(ngModel)]="requireSpecial">Special</mat-checkbox>
+          <mat-checkbox
+            [(ngModel)]="requireSpecial"
+            (change)="storeValue('requireSpecial', requireSpecial)"
+            >Special</mat-checkbox
+          >
         </mat-card-content>
       </mat-card>
 
@@ -286,15 +310,34 @@
         <mat-card-content>
           <mat-checkbox
             [(ngModel)]="collectionNonExotics"
-            (change)="updateCounts()"
+            (change)="storeValue('collectionNonExotics', collectionNonExotics)"
             >Non-Exotics</mat-checkbox
           ><br />
           <mat-checkbox
             *ngIf="exotics !== 'exclude'"
             [(ngModel)]="collectionExotics"
-            (change)="updateCounts()"
+            (change)="storeValue('collectionExotics', collectionExotics)"
             >Exotics</mat-checkbox
           >
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-header
+          ><mat-card-title>Manifest</mat-card-title></mat-card-header
+        >
+        <mat-card-content>
+          <mat-form-field>
+            <mat-label>Language</mat-label>
+            <mat-select [value]="language$ | async">
+              <mat-option
+                *ngFor="let lang of destinyManifestLanguages"
+                [value]="lang"
+                (click)="setLanguage(lang)"
+                >{{ lang }}</mat-option
+              >
+            </mat-select>
+          </mat-form-field>
         </mat-card-content>
       </mat-card>
 
@@ -313,6 +356,7 @@
               title="Discord Webhook URL"
               matInput
               [(ngModel)]="discordWebhookUrl"
+              (change)="storeValue('discordWebhookUrl', discordWebhookUrl)"
               type="password"
             />
           </mat-form-field>
@@ -322,9 +366,15 @@
               title="Thread ID"
               matInput
               [(ngModel)]="discordThreadId"
+              (change)="storeValue('discordThreadId', discordThreadId)"
               type="password"
             />
           </mat-form-field>
+          <mat-checkbox
+            [(ngModel)]="discordCleanUp"
+            (change)="storeValue('discordCleanUp', discordCleanUp)"
+            >Delete Previous Message</mat-checkbox
+          >
         </mat-card-content>
       </mat-card>
     </div>
