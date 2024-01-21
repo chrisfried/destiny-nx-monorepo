@@ -361,7 +361,7 @@ export class AppComponent {
     );
 
     return `(${names
-      .map((name) => `name:"${name}"`)
+      .map((name) => `exactname:"${name}"`)
       .join(' OR ')}) AND is:weapon`;
   }
 
