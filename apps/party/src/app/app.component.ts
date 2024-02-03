@@ -352,6 +352,16 @@ export class AppComponent {
       if (msg.type === 'removeManualPlayer') {
         this.playerService.removeManualPlayer(msg.body);
       }
+      if (msg.type === 'toggleRemotePlayer') {
+        this.playerService.toggleRemotePlayer(
+          msg.body.membershipId,
+          msg.body.disabled
+        );
+      }
+      if (msg.type === 'refreshRemotePlayer') {
+        console.log(msg.body.membershipId);
+        this.playerService.refreshRemotePlayer(msg.body.membershipId);
+      }
     });
   }
 

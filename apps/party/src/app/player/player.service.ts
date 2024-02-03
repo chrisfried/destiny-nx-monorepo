@@ -338,6 +338,90 @@ export class PlayerService {
     }
   }
 
+  togglePlayer(player: DestinyPlayer) {
+    player.disabled = !player.disabled;
+
+    switch (player.playerType) {
+      case 'local':
+        this.localPlayer$.next(player);
+        break;
+      case 'remote':
+        this.remotePlayers$
+          .pipe(
+            take(1),
+            map((remotePlayers) => {
+              this.remotePlayers$.next([
+                ...remotePlayers.filter(
+                  (p) => p.membershipId !== player.membershipId
+                ),
+                player,
+              ]);
+            })
+          )
+          .subscribe();
+        this.p2pcfService.p2pcf?.broadcast(
+          new TextEncoder().encode(
+            JSON.stringify({
+              type: 'toggleRemotePlayer',
+              body: {
+                membershipId: player.membershipId,
+                disabled: player.disabled,
+              },
+            })
+          )
+        );
+        break;
+      case 'manual':
+        this.manualPlayers$
+          .pipe(
+            take(1),
+            map((manualPlayers) => {
+              this.manualPlayers$.next([
+                ...manualPlayers.filter(
+                  (p) => p.membershipId !== player.membershipId
+                ),
+                player,
+              ]);
+            })
+          )
+          .subscribe();
+        this.p2pcfService.p2pcf?.broadcast(
+          new TextEncoder().encode(
+            JSON.stringify({ type: 'manualPlayer', body: player })
+          )
+        );
+        break;
+    }
+  }
+
+  toggleRemotePlayer(membershipId: string, disabled: boolean) {
+    this.localPlayer$
+      .pipe(
+        take(1),
+        map((localPlayer) => {
+          if (localPlayer && localPlayer.membershipId === membershipId) {
+            localPlayer.disabled = disabled;
+            this.localPlayer$.next(localPlayer);
+          }
+        })
+      )
+      .subscribe();
+  }
+
+  refreshRemotePlayer(membershipId: string) {
+    this.localPlayer$
+      .pipe(
+        take(1),
+        map((localPlayer) => {
+          console.log(membershipId, localPlayer?.membershipId);
+          if (localPlayer && localPlayer.membershipId === membershipId) {
+            this.fetchWeapons(localPlayer);
+          }
+        })
+      )
+      .subscribe();
+  }
+
   removeRemotePlayer(membershipId: string) {
     this.remotePlayers$
       .pipe(
@@ -362,6 +446,23 @@ export class PlayerService {
         })
       )
       .subscribe();
+  }
+
+  refreshPlayer(player: DestinyPlayer) {
+    if (player.playerType === 'local' || player.playerType === 'manual') {
+      this.fetchWeapons(player);
+    } else {
+      this.p2pcfService.p2pcf?.broadcast(
+        new TextEncoder().encode(
+          JSON.stringify({
+            type: 'refreshRemotePlayer',
+            body: {
+              membershipId: player.membershipId,
+            },
+          })
+        )
+      );
+    }
   }
 
   fetchWeapons(player: DestinyPlayer) {
@@ -608,7 +709,7 @@ export class PlayerService {
           });
 
           players
-            .filter((p) => p.status === 'ready')
+            .filter((p) => p.status === 'ready' && !p.disabled)
             .forEach((player) => {
               this.manifest.slotHashSet.forEach((slotHash) => {
                 this.combinedSets.union.exotics[slotHash] = new Set([
@@ -647,7 +748,7 @@ export class PlayerService {
           });
 
           players
-            .filter((p) => p.status === 'ready')
+            .filter((p) => p.status === 'ready' && !p.disabled)
             .forEach((player) => {
               this.manifest.slotHashSet.forEach((slotHash) => {
                 this.combinedSets.intersection.exotics[slotHash] = new Set(
@@ -723,6 +824,7 @@ export type DestinyPlayer = {
   emblemBackgroundPath?: string;
   suspectNonEquippedDisabled: boolean;
   suspectProgressionDisabled: boolean;
+  disabled?: boolean;
   exotics: {
     [slotHash: number]: Array<number>;
   };

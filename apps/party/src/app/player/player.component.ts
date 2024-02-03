@@ -40,9 +40,11 @@ export class PlayerComponent {
   ) {}
 
   refreshPlayer() {
-    if (this.player) {
-      this.playerService.fetchWeapons(this.player);
-    }
+    this.playerService.refreshPlayer(this.player);
+  }
+
+  togglePlayer() {
+    this.playerService.togglePlayer(this.player);
   }
 
   removePlayer() {

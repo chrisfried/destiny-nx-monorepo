@@ -205,7 +205,10 @@
           [ngModelOptions]="{ standalone: true }"
         />
       </mat-form-field>
-      <button color="primary" type="submit" mat-raised-button>Add</button>
+      <button color="primary" type="submit" mat-raised-button>
+        Add Player
+        <mat-icon aria-label="Add Player">add</mat-icon>
+      </button>
     </form>
     <div class="player-cards">
       <destiny-player
@@ -227,7 +230,12 @@
         <mat-card-content></mat-card-content>
         <mat-card-actions>
           <div class="spacer"></div>
-          <button (click)="hideAwait = true" mat-icon-button aria-label="Hide">
+          <button
+            (click)="hideAwait = true"
+            mat-icon-button
+            aria-label="Hide"
+            title="Hide"
+          >
             <mat-icon>close</mat-icon>
           </button>
         </mat-card-actions>

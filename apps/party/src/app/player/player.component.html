@@ -1,7 +1,11 @@
 <mat-card class="player-card" *ngIf="player?.status === 'loading'">
   <mat-spinner></mat-spinner>
 </mat-card>
-<mat-card class="player-card" *ngIf="player?.status !== 'loading'">
+<mat-card
+  class="player-card"
+  [class.disabled]="player.disabled"
+  *ngIf="player?.status !== 'loading'"
+>
   <mat-card-header>
     <img
       *ngIf="player?.emblemPath"
@@ -90,9 +94,19 @@
       (click)="refreshPlayer()"
       mat-icon-button
       aria-label="Refresh Player"
-      *ngIf="player?.playerType !== 'remote'"
+      title="Refresh Player"
     >
       <mat-icon>refresh</mat-icon>
+    </button>
+    <button
+      (click)="togglePlayer()"
+      [disabled]="[player.status !== 'ready']"
+      mat-icon-button
+      aria-label="Toggle Player"
+      [title]="player.disabled ? 'Enable Player' : 'Disable Player'"
+    >
+      <mat-icon *ngIf="!player?.disabled">toggle_on</mat-icon>
+      <mat-icon *ngIf="player?.disabled">toggle_off</mat-icon>
     </button>
     <button
       (click)="removePlayer()"
@@ -100,6 +114,7 @@
       color="warn"
       aria-label="Remove Player"
       *ngIf="player?.playerType === 'manual'"
+      title="Remove Player"
     >
       <mat-icon>delete</mat-icon>
     </button>
