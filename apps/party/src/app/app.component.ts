@@ -573,7 +573,7 @@ export class AppComponent {
         : `${this.discordWebhookUrl}?wait=true`;
       this.http
         .post(url, {
-          content: `\`\`\`${this.searchText}\`\`\``,
+          content: this.searchText,
         })
         .subscribe((res) => {
           this.discordMessageId = (res as any).id;
